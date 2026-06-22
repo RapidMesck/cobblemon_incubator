@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "cobblemon_incubator",
+  "version": "${version}",
+  "name": "Cobblemon Incubator",
+  "description": "Addon para Cobblemon usando Kotlin e Architectury.",
+  "authors": ["RapidMesck"],
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      {
+        "adapter": "kotlin",
+        "value": "com.nbp.cobblemon_incubator.fabric.CobblemonIncubatorFabric"
+      }
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.17.0",
+    "minecraft": "1.21.1",
+    "fabric-language-kotlin": "*",
+    "cobblemon": "*"
+  }
+}

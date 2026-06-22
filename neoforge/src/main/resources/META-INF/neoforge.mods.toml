@@ -1,0 +1,33 @@
+modLoader = "kotlinforforge"
+loaderVersion = "[5,)"
+license = "MIT"
+
+[[mods]]
+modId = "cobblemon_incubator"
+version = "${version}"
+displayName = "Cobblemon Incubator"
+authors = "RapidMesck"
+description = '''
+Addon para Cobblemon usando Kotlin, Fabric, NeoForge e Architectury.
+'''
+
+[[dependencies.cobblemon_incubator]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.cobblemon_incubator]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.cobblemon_incubator]]
+modId = "cobblemon"
+type = "required"
+versionRange = "*"
+ordering = "AFTER"
+side = "BOTH"
