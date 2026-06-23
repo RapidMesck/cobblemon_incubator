@@ -45,23 +45,22 @@ class EggIncubatorMenu : AbstractContainerMenu {
         checkContainerSize(container, EggIncubatorBlockEntity.CONTAINER_SIZE)
         container.startOpen(playerInventory.player)
 
-        val mainX = 94
-        addSlot(EggSlot(container, EggIncubatorBlockEntity.SLOT_INPUT, mainX + 18, 35))
-        addSlot(OutputSlot(container, EggIncubatorBlockEntity.SLOT_OUTPUT, mainX + 126, 35))
+        val mainX = 92
+        addSlot(EggSlot(container, EggIncubatorBlockEntity.SLOT_INPUT, 110, 52))
+        addSlot(OutputSlot(container, EggIncubatorBlockEntity.SLOT_OUTPUT, 218, 52))
 
-        addSlot(UpgradeSlot(container, 2, mainX + 66, 17))
-        addSlot(UpgradeSlot(container, 3, mainX + 86, 17))
-        addSlot(UpgradeSlot(container, 4, mainX + 66, 53))
-        addSlot(UpgradeSlot(container, 5, mainX + 86, 53))
+        addSlot(UpgradeSlot(container, 2, 141, 91))
+        addSlot(UpgradeSlot(container, 3, 164, 91))
+        addSlot(UpgradeSlot(container, 4, 187, 91))
 
         for (row in 0..2) {
             for (column in 0..8) {
-                addSlot(Slot(playerInventory, column + row * 9 + 9, mainX + column * 18, 116 + row * 18))
+                addSlot(Slot(playerInventory, column + row * 9 + 9, mainX + column * 18, 122 + row * 18))
             }
         }
 
         for (column in 0..8) {
-            addSlot(Slot(playerInventory, column, mainX + column * 18, 174))
+            addSlot(Slot(playerInventory, column, mainX + column * 18, 180))
         }
 
         addDataSlots(data)
@@ -130,11 +129,23 @@ class EggIncubatorMenu : AbstractContainerMenu {
         if (index < containerSlots) {
             if (!moveItemStackTo(stack, containerSlots, slots.size, true)) return ItemStack.EMPTY
         } else if (CobbreedingCompat.isEgg(stack)) {
-            if (!moveItemStackTo(stack, EggIncubatorBlockEntity.SLOT_INPUT, EggIncubatorBlockEntity.SLOT_INPUT + 1, false)) {
+            if (!moveItemStackTo(
+                    stack,
+                    EggIncubatorBlockEntity.SLOT_INPUT,
+                    EggIncubatorBlockEntity.SLOT_INPUT + 1,
+                    false
+                )
+            ) {
                 return ItemStack.EMPTY
             }
         } else if (UpgradeSlot.isUpgrade(stack)) {
-            if (!moveItemStackTo(stack, EggIncubatorBlockEntity.SLOT_UPGRADE_START, EggIncubatorBlockEntity.SLOT_UPGRADE_END + 1, false)) {
+            if (!moveItemStackTo(
+                    stack,
+                    EggIncubatorBlockEntity.SLOT_UPGRADE_START,
+                    EggIncubatorBlockEntity.SLOT_UPGRADE_END + 1,
+                    false
+                )
+            ) {
                 return ItemStack.EMPTY
             }
         } else {
@@ -172,8 +183,8 @@ class EggIncubatorMenu : AbstractContainerMenu {
         companion object {
             fun isUpgrade(stack: ItemStack): Boolean {
                 return stack.`is`(ModRegistries.SPEED_UPGRADE.get()) ||
-                    stack.`is`(ModRegistries.PC_UPGRADE.get()) ||
-                    stack.`is`(ModRegistries.FILTER_UPGRADE.get())
+                        stack.`is`(ModRegistries.PC_UPGRADE.get()) ||
+                        stack.`is`(ModRegistries.FILTER_UPGRADE.get())
             }
         }
     }

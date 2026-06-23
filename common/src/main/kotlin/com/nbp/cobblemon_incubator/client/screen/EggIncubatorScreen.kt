@@ -14,6 +14,7 @@ import com.mojang.blaze3d.vertex.BufferUploader
 import com.mojang.blaze3d.vertex.DefaultVertexFormat
 import com.mojang.blaze3d.vertex.Tesselator
 import com.mojang.blaze3d.vertex.VertexFormat
+import com.nbp.cobblemon_incubator.CobblemonIncubator
 import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
 import com.nbp.cobblemon_incubator.util.CobbreedingCompat
 import com.nbp.cobblemon_incubator.util.FilterConfig
@@ -23,6 +24,7 @@ import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.phys.Vec2
 import org.joml.Vector3f
@@ -57,7 +59,6 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     private lateinit var natureSearch: EditBox
     private lateinit var abilitySearch: EditBox
 
-    private val statsChartResource = cobblemonResource("textures/gui/summary/summary_stats_chart.png")
     private val chartStats: List<Pair<String, Stat>> = listOf(
         "HP" to Stats.HP,
         "Atk" to Stats.ATTACK,
@@ -68,10 +69,12 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     )
 
     init {
-        imageWidth = 384
-        imageHeight = 206
-        inventoryLabelX = 94
-        inventoryLabelY = 104
+        imageWidth = BASE_WIDTH
+        imageHeight = BASE_HEIGHT
+        inventoryLabelX = 93
+        inventoryLabelY = 96
+        titleLabelX = 126
+        titleLabelY = 12
     }
 
     override fun init() {
@@ -80,24 +83,18 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         natureButtons.clear()
         abilityButtons.clear()
 
-        val filterX = leftPos + 282
-        var y = topPos + 18
+        val filterX = leftPos + 274
+        clearButton = addFilterButton(filterX, topPos + 31, 31, 14, 0)
+        rejectButton = addFilterButton(filterX + 34, topPos + 31, 35, 14, 6)
+        speciesButton = addFilterButton(filterX, topPos + 49, 69, 14, 1)
 
-        clearButton = addFilterButton(filterX, y, 42, 16, 0)
-        rejectButton = addFilterButton(filterX + 46, y, 54, 16, 6)
-        y += 19
-        speciesButton = addFilterButton(filterX, y, 100, 16, 1)
-
-        y = topPos + 60
-        natureSelectButton = addLocalButton(filterX, y, 100, 16) {
+        natureSelectButton = addLocalButton(filterX, topPos + 69, 69, 14) {
             openSelect = if (openSelect == OpenSelect.NATURE) OpenSelect.NONE else OpenSelect.NATURE
             if (openSelect == OpenSelect.NATURE) natureSearch.setFocused(true)
         }
-        y += 17
-        natureSearch = addSearchBox(filterX, y, "Nature")
-        y += 15
+        natureSearch = addSearchBox(filterX, topPos + 85, "Nature")
         repeat(3) { row ->
-            natureButtons += addDynamicFilterButton(filterX, y + row * 15, 100, 14) {
+            natureButtons += addDynamicFilterButton(filterX, topPos + 99 + row * 14, 69, 13) {
                 natureOptions().getOrNull(row)?.let {
                     openSelect = OpenSelect.NONE
                     natureSearch.setFocused(false)
@@ -106,16 +103,13 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             }
         }
 
-        y = topPos + 88
-        abilitySelectButton = addLocalButton(filterX, y, 100, 16) {
+        abilitySelectButton = addLocalButton(filterX, topPos + 91, 69, 14) {
             openSelect = if (openSelect == OpenSelect.ABILITY) OpenSelect.NONE else OpenSelect.ABILITY
             if (openSelect == OpenSelect.ABILITY) abilitySearch.setFocused(true)
         }
-        y += 17
-        abilitySearch = addSearchBox(filterX, y, "Ability")
-        y += 15
+        abilitySearch = addSearchBox(filterX, topPos + 107, "Ability")
         repeat(3) { row ->
-            abilityButtons += addDynamicFilterButton(filterX, y + row * 15, 100, 14) {
+            abilityButtons += addDynamicFilterButton(filterX, topPos + 121 + row * 14, 69, 13) {
                 abilityOptions().getOrNull(row)?.let {
                     openSelect = OpenSelect.NONE
                     abilitySearch.setFocused(false)
@@ -124,18 +118,16 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             }
         }
 
-        y = topPos + 130
-        ivPrevButton = addLocalButton(filterX, y, 18, 16) {
+        ivPrevButton = addLocalButton(filterX, topPos + 130, 16, 14) {
             selectedIvIndex = Math.floorMod(selectedIvIndex - 1, FilterConfig.STATS.size)
         }
-        ivNextButton = addLocalButton(filterX + 82, y, 18, 16) {
+        ivNextButton = addLocalButton(filterX + 53, topPos + 130, 16, 14) {
             selectedIvIndex = Math.floorMod(selectedIvIndex + 1, FilterConfig.STATS.size)
         }
-        y += 18
-        ivOperatorButton = addDynamicFilterButton(filterX, y, 30, 16) { 100 + selectedIvIndex }
-        ivDownButton = addDynamicFilterButton(filterX + 34, y, 20, 16) { 110 + selectedIvIndex }
-        ivUpButton = addDynamicFilterButton(filterX + 58, y, 20, 16) { 120 + selectedIvIndex }
-        ivClearButton = addDynamicFilterButton(filterX + 82, y, 18, 16) { 130 + selectedIvIndex }
+        ivOperatorButton = addDynamicFilterButton(filterX, topPos + 149, 25, 14) { 100 + selectedIvIndex }
+        ivDownButton = addDynamicFilterButton(filterX + 28, topPos + 149, 15, 14) { 110 + selectedIvIndex }
+        ivUpButton = addDynamicFilterButton(filterX + 46, topPos + 149, 15, 14) { 120 + selectedIvIndex }
+        ivClearButton = addDynamicFilterButton(filterX + 64, topPos + 149, 10, 14) { 130 + selectedIvIndex }
     }
 
     override fun render(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
@@ -148,80 +140,96 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     override fun renderBg(guiGraphics: GuiGraphics, partialTick: Float, mouseX: Int, mouseY: Int) {
         val left = leftPos
         val top = topPos
-        guiGraphics.fill(left, top, left + imageWidth, top + imageHeight, 0xFF182029.toInt())
-        guiGraphics.fill(left + 6, top + 6, left + 88, top + imageHeight - 6, 0xFF0F151C.toInt())
-        guiGraphics.fill(left + 94, top + 6, left + 270, top + 92, 0xFF252D36.toInt())
-        guiGraphics.fill(left + 94, top + 100, left + 270, top + imageHeight - 6, 0xFF11161D.toInt())
-        guiGraphics.fill(left + 276, top + 6, left + imageWidth - 6, top + imageHeight - 6, 0xFF101820.toInt())
+        val matrices = guiGraphics.pose()
 
         val properties = eggProperties()
         updateModelWidget(properties)
-        renderPokemonPreview(guiGraphics, mouseX, mouseY, partialTick)
 
-        drawSlot(guiGraphics, left + 111, top + 34, 0xFF6EA8FE.toInt())
-        drawSlot(guiGraphics, left + 219, top + 34, 0xFF62C073.toInt())
-        drawSlot(guiGraphics, left + 159, top + 16, 0xFFE5C07B.toInt())
-        drawSlot(guiGraphics, left + 179, top + 16, 0xFFE5C07B.toInt())
-        drawSlot(guiGraphics, left + 159, top + 52, 0xFFE5C07B.toInt())
-        drawSlot(guiGraphics, left + 179, top + 52, 0xFFE5C07B.toInt())
+        blitk(
+            matrixStack = matrices,
+            texture = backgroundResource,
+            x = left,
+            y = top,
+            width = BASE_WIDTH,
+            height = BASE_HEIGHT
+        )
+        modelWidget?.render(guiGraphics, mouseX, mouseY, partialTick)
 
-        val max = menu.maxTimer.coerceAtLeast(1)
-        val progress = ((max - menu.remainingTimer).coerceIn(0, max) / max.toFloat() * 48).roundToInt()
-        guiGraphics.fill(left + 154, top + 39, left + 202, top + 47, 0xFF0B0F14.toInt())
-        guiGraphics.fill(left + 154, top + 39, left + 154 + progress, top + 47, 0xFF62C073.toInt())
+        renderEggProgress(guiGraphics, left, top)
+        renderFilterSearchFrames(guiGraphics)
     }
 
     override fun renderLabels(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
-        guiGraphics.drawString(font, title, 94, 8, 0xE6EDF3, false)
-        guiGraphics.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xC9D1D9, false)
-        guiGraphics.drawString(font, "${menu.speedMultiplier}x", 170, 39, 0xE6EDF3, false)
-        if (menu.hasPcUpgrade) guiGraphics.drawString(font, "PC", 172, 29, 0x8EEA9A, false)
+        drawPcText(guiGraphics, title, 172.5F, 12F, centered = true, shadow = true)
+        drawPcText(guiGraphics, Component.literal("Filter"), 283.5F, 12F, centered = true, shadow = true)
+        drawPcText(guiGraphics, playerInventoryTitle, 172F, 111F, centered = true, shadow = true)
 
         renderEggInfo(guiGraphics)
         renderFilterLabels(guiGraphics)
     }
 
-    private fun renderPokemonPreview(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
-        guiGraphics.fill(leftPos + 13, topPos + 13, leftPos + 81, topPos + 82, 0xFF1B2633.toInt())
-        guiGraphics.fill(leftPos + 15, topPos + 15, leftPos + 79, topPos + 80, 0xFF263645.toInt())
-        modelWidget?.render(guiGraphics, mouseX, mouseY, partialTick)
+    private fun renderEggProgress(guiGraphics: GuiGraphics, left: Int, top: Int) {
+        if (menu.inputStack.isEmpty) return
+
+        val max = menu.maxTimer.coerceAtLeast(1)
+        val progress = (max - menu.remainingTimer).coerceIn(0, max) / max.toFloat()
+        val frame = (progress * (EGG_PROGRESS_FRAMES - 1)).roundToInt()
+
+        blitk(
+            matrixStack = guiGraphics.pose(),
+            texture = eggProgressResource,
+            x = left + EGG_PROGRESS_X,
+            y = top + EGG_PROGRESS_Y,
+            width = EGG_PROGRESS_WIDTH,
+            height = EGG_PROGRESS_HEIGHT,
+            vOffset = frame * EGG_PROGRESS_HEIGHT,
+            textureWidth = EGG_PROGRESS_WIDTH,
+            textureHeight = EGG_PROGRESS_HEIGHT * EGG_PROGRESS_FRAMES
+        )
+    }
+
+    private fun renderFilterSearchFrames(guiGraphics: GuiGraphics) {
+        if (natureSearch.visible) drawSearchFrame(guiGraphics, natureSearch.x, natureSearch.y, natureSearch.width, natureSearch.height)
+        if (abilitySearch.visible) drawSearchFrame(guiGraphics, abilitySearch.x, abilitySearch.y, abilitySearch.width, abilitySearch.height)
+    }
+
+    private fun drawSearchFrame(guiGraphics: GuiGraphics, x: Int, y: Int, width: Int, height: Int) {
+        guiGraphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF2E3438.toInt())
+        guiGraphics.fill(x, y, x + width, y + height, 0xFF14191E.toInt())
     }
 
     private fun renderEggInfo(guiGraphics: GuiGraphics) {
         val properties = eggProperties()
-        guiGraphics.drawString(font, "Egg Preview", 12, 88, 0xE6EDF3, false)
         if (properties == null) {
-            guiGraphics.drawString(font, "No egg", 22, 108, 0x8B949E, false)
+            drawPcText(guiGraphics, Component.literal("No Egg"), 5F, 12F, shadow = true)
             return
         }
 
-        guiGraphics.drawString(font, (properties.species ?: "Unknown").fit(13), 12, 101, 0xE6EDF3, false)
-        guiGraphics.drawString(font, "Nature", 12, 114, 0x8B949E, false)
-        guiGraphics.drawString(font, displayValue(properties.nature).fit(13), 12, 123, 0xC9D1D9, false)
-        guiGraphics.drawString(font, "Ability", 12, 135, 0x8B949E, false)
-        guiGraphics.drawString(font, displayValue(properties.ability).fit(13), 12, 144, 0xC9D1D9, false)
+        drawPcText(guiGraphics, Component.literal(displayName(properties.species).fit(14)), 5F, 12F, shadow = true)
+        drawSmallText(guiGraphics, Component.literal("Nature"), 38.5F, 98F, centered = true)
+        drawSmallText(guiGraphics, Component.literal(displayName(properties.nature).fit(13)), 38.5F, 105F, centered = true)
+        drawSmallText(guiGraphics, Component.literal("Ability"), 38.5F, 115F, centered = true)
+        drawSmallText(guiGraphics, Component.literal(displayName(properties.ability).fit(13)), 38.5F, 122F, centered = true)
 
         val ivs = properties.ivs
         if (ivs != null) {
             renderIvChart(guiGraphics, ivs)
         } else {
-            guiGraphics.drawString(font, "IVs unknown", 12, 174, 0x8B949E, false)
+            drawPcText(guiGraphics, Component.literal("IVs unknown"), 40F, 177F, centered = true, colour = 0xB8B8B8)
         }
     }
 
     private fun renderFilterLabels(guiGraphics: GuiGraphics) {
-        guiGraphics.drawString(font, "Filter", 282, 8, 0xE6EDF3, false)
         if (menu.filterStack.isEmpty) {
-            guiGraphics.drawString(font, "No upgrade", 286, 92, 0xF08888, false)
+            drawPcText(guiGraphics, Component.literal("No upgrade"), 310F, 88F, centered = true, colour = 0xF08888)
             return
         }
 
-        val stat = FilterConfig.STATS[selectedIvIndex]
-        val config = menu.filterConfig
-        val rule = config.ivRules[stat.key]
-        val ruleText = rule?.let { "${it.operator.label}${it.value}" } ?: "Any"
         if (openSelect == OpenSelect.NONE) {
-            guiGraphics.drawString(font, "IV ${stat.label}: $ruleText", 305, 122, 0xC9D1D9, false)
+            val stat = FilterConfig.STATS[selectedIvIndex]
+            val rule = menu.filterConfig.ivRules[stat.key]
+            val ruleText = rule?.let { "${it.operator.label}${it.value}" } ?: "Any"
+            drawPcText(guiGraphics, Component.literal("IV ${stat.label}: $ruleText"), 310F, 118F, centered = true)
         }
     }
 
@@ -233,14 +241,14 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             ?: runCatching { properties?.asRenderablePokemon() }.getOrNull()
         modelWidget = renderable?.let {
             ModelWidget(
-                pX = leftPos + 13,
-                pY = topPos + 14,
-                pWidth = 68,
-                pHeight = 68,
+                pX = leftPos + 6,
+                pY = topPos + 27,
+                pWidth = PORTRAIT_SIZE,
+                pHeight = PORTRAIT_SIZE,
                 pokemon = it,
                 baseScale = 2.0F,
-                rotationY = 35F,
-                offsetY = 0.0,
+                rotationY = 325F,
+                offsetY = -10.0,
                 playCryOnClick = false,
                 shouldFollowCursor = true
             )
@@ -250,47 +258,43 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     private fun eggProperties(): PokemonProperties? = CobbreedingCompat.extractProperties(menu.inputStack)
 
     private fun renderIvChart(guiGraphics: GuiGraphics, ivs: com.cobblemon.mod.common.pokemon.IVs) {
-        val x = 18
-        val y = 154
-        val scale = 0.26F
+        val centerX = 40.4F
+        val centerY = 163.7F
+        val scale = 0.24F
+        val textureX = centerX - (166F * scale / 2F)
+        val textureY = centerY - (192F * scale / 2F)
         blitk(
             matrixStack = guiGraphics.pose(),
             texture = statsChartResource,
-            x = x / scale,
-            y = y / scale,
+            x = textureX / scale,
+            y = textureY / scale,
             width = 166,
             height = 192,
             scale = scale
         )
 
+        val radius = 14.4F
         drawIvPolygon(
-            centerX = leftPos + x + 21.7F,
-            centerY = topPos + y + 18.2F,
-            radius = 15.6F,
+            centerX = leftPos + centerX,
+            centerY = topPos + centerY,
+            radius = radius,
             ratios = chartStats.map { (_, stat) -> ivs.getOrDefault(stat) / 31F },
             colour = Vector3f(216F / 255F, 100F / 255F, 1F)
         )
 
-        val labelColor = 0xE6EDF3
-        val mutedColor = 0x8B949E
-        val points = chartPoints(x + 21.7F, y + 18.2F, 20.0F)
-        chartStats.forEachIndexed { index, pair ->
-            val point = points[index]
-            val value = ivs.getOrDefault(pair.second)
-            val labelX = when (index) {
-                0, 3 -> (point.x - font.width(pair.first) / 2).roundToInt()
-                1, 2 -> point.x.roundToInt()
-                else -> (point.x - font.width(pair.first)).roundToInt()
-            }
-            val labelY = when (index) {
-                0 -> point.y.roundToInt() - 5
-                3 -> point.y.roundToInt() - 1
-                else -> point.y.roundToInt() - 3
-            }
-            val label = if (index % 2 == 0) pair.first else value.toString()
-            guiGraphics.drawString(font, label, labelX, labelY, labelColor, false)
+        val values = chartStats.map { (_, stat) -> ivs.getOrDefault(stat).toString() }
+        val positions = listOf(
+            Vec2(centerX, centerY - 24F),
+            Vec2(centerX + 24F, centerY - 7F),
+            Vec2(centerX + 24F, centerY + 11F),
+            Vec2(centerX, centerY + 25F),
+            Vec2(centerX - 24F, centerY + 11F),
+            Vec2(centerX - 24F, centerY - 7F)
+        )
+        values.forEachIndexed { index, value ->
+            drawTinyText(guiGraphics, Component.literal(chartStats[index].first), positions[index].x, positions[index].y - 5F, centered = true, colour = 0xD8D8D8)
+            drawTinyText(guiGraphics, Component.literal(value), positions[index].x, positions[index].y + 1F, centered = true)
         }
-        guiGraphics.drawString(font, "Total ${ivs.total()}", 12, 194, mutedColor, false)
     }
 
     private fun chartPoints(centerX: Float, centerY: Float, radius: Float): List<Vec2> {
@@ -334,17 +338,11 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F)
     }
 
-    private fun drawSlot(guiGraphics: GuiGraphics, x: Int, y: Int, accent: Int) {
-        guiGraphics.fill(x - 1, y - 1, x + 19, y + 19, 0xFF0D1117.toInt())
-        guiGraphics.fill(x, y, x + 18, y + 18, 0xFF3B424C.toInt())
-        guiGraphics.fill(x, y, x + 18, y + 1, accent)
-    }
-
     private fun addSearchBox(x: Int, y: Int, hint: String): EditBox {
-        val box = EditBox(font, x, y, 100, 14, Component.literal(hint))
+        val box = EditBox(font, x + 3, y + 2, 63, 10, Component.literal(hint))
         box.setHint(Component.literal("Search $hint"))
         box.setMaxLength(32)
-        box.setBordered(true)
+        box.setBordered(false)
         return addRenderableWidget(box)
     }
 
@@ -353,16 +351,16 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     }
 
     private fun addDynamicFilterButton(x: Int, y: Int, width: Int, height: Int, idProvider: () -> Int): Button {
-        val button = Button.builder(Component.empty()) {
+        val button = PcTextButton(x, y, width, height, Component.empty()) {
             val id = idProvider()
             if (id >= 0) Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, id)
-        }.bounds(x, y, width, height).build()
+        }
         filterButtons.add(button)
         return addRenderableWidget(button)
     }
 
     private fun addLocalButton(x: Int, y: Int, width: Int, height: Int, onPress: () -> Unit): Button {
-        val button = Button.builder(Component.empty()) { onPress() }.bounds(x, y, width, height).build()
+        val button = PcTextButton(x, y, width, height, Component.empty()) { onPress() }
         filterButtons.add(button)
         return addRenderableWidget(button)
     }
@@ -373,9 +371,9 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
 
         val config = menu.filterConfig
         clearButton.message = Component.literal("Clear")
-        speciesButton.message = Component.literal("Species: ${config.species ?: "Use egg"}".fit(16))
-        natureSelectButton.message = Component.literal("Nature: ${config.nature ?: "Any"}".fit(16))
-        abilitySelectButton.message = Component.literal("Ability: ${config.ability ?: "Any"}".fit(16))
+        speciesButton.message = Component.literal("Species: ${(config.species?.let(::displayName) ?: "Use Egg")}".fit(14))
+        natureSelectButton.message = Component.literal("Nature: ${displayName(config.nature)}".fit(14))
+        abilitySelectButton.message = Component.literal("Ability: ${displayName(config.ability)}".fit(14))
         rejectButton.message = Component.literal(config.rejectAction.label)
         natureSelectButton.visible = hasFilter
         abilitySelectButton.visible = hasFilter && openSelect != OpenSelect.NATURE
@@ -396,14 +394,14 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         natureButtons.forEachIndexed { index, button ->
             val option = natureOptions.getOrNull(index)
             button.visible = hasFilter && openSelect == OpenSelect.NATURE && option != null
-            button.message = Component.literal(option?.label?.fit(16) ?: "")
+            button.message = Component.literal(option?.label?.fit(14) ?: "")
         }
 
         val abilityOptions = abilityOptions()
         abilityButtons.forEachIndexed { index, button ->
             val option = abilityOptions.getOrNull(index)
             button.visible = hasFilter && openSelect == OpenSelect.ABILITY && option != null
-            button.message = Component.literal(option?.label?.fit(16) ?: "")
+            button.message = Component.literal(option?.label?.fit(14) ?: "")
         }
 
         ivPrevButton.message = Component.literal("<")
@@ -418,14 +416,14 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
 
     private fun natureOptions(): List<SelectOption> {
         val values = listOf<String?>(null) + Natures.all().map { it.name.path }.sorted()
-        return values.mapIndexed { index, value -> SelectOption(index, value, value ?: "Any") }
+        return values.mapIndexed { index, value -> SelectOption(index, value, displayName(value)) }
             .filter { it.matches(natureSearch.value) }
             .take(3)
     }
 
     private fun abilityOptions(): List<SelectOption> {
         val values = listOf<String?>(null) + Abilities.all().map { it.name }.sorted()
-        return values.mapIndexed { index, value -> SelectOption(index, value, value ?: "Any") }
+        return values.mapIndexed { index, value -> SelectOption(index, value, displayName(value)) }
             .filter { it.matches(abilitySearch.value) }
             .take(3)
     }
@@ -434,11 +432,106 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         return search.isBlank() || label.contains(search, ignoreCase = true)
     }
 
-    private fun displayValue(value: String?): String {
-        return value?.substringAfter(':') ?: "Any"
+    private fun displayName(value: String?): String {
+        val clean = value?.substringAfter(':')?.substringAfterLast('/') ?: return "Any"
+        return clean.split('-', '_', ' ')
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } }
+    }
+
+    private fun drawPcText(
+        guiGraphics: GuiGraphics,
+        text: Component,
+        x: Float,
+        y: Float,
+        centered: Boolean = false,
+        shadow: Boolean = false,
+        colour: Int = 0xFFFFFF,
+        scale: Float = 0.85F
+    ) {
+        val drawX = if (centered) x.roundToInt() - font.width(text) / 2 else x.roundToInt()
+        guiGraphics.drawString(font, text, drawX, y.roundToInt(), colour, shadow)
+    }
+
+    private fun drawSmallText(
+        guiGraphics: GuiGraphics,
+        text: Component,
+        x: Float,
+        y: Float,
+        centered: Boolean = false,
+        colour: Int = 0xFFFFFF,
+        scale: Float = 0.65F
+    ) {
+        val pose = guiGraphics.pose()
+        val drawX = if (centered) x - (font.width(text) * scale / 2F) else x
+        pose.pushPose()
+        pose.scale(scale, scale, 1F)
+        guiGraphics.drawString(font, text, (drawX / scale).roundToInt(), (y / scale).roundToInt(), colour, false)
+        pose.popPose()
+    }
+
+    private fun drawTinyText(
+        guiGraphics: GuiGraphics,
+        text: Component,
+        x: Float,
+        y: Float,
+        centered: Boolean = false,
+        colour: Int = 0xFFFFFF,
+        scale: Float = 0.48F
+    ) {
+        val pose = guiGraphics.pose()
+        val drawX = if (centered) x - (font.width(text) * scale / 2F) else x
+        pose.pushPose()
+        pose.scale(scale, scale, 1F)
+        guiGraphics.drawString(font, text, (drawX / scale).roundToInt(), (y / scale).roundToInt(), colour, false)
+        pose.popPose()
     }
 
     private fun String.fit(max: Int): String {
         return if (length <= max) this else take(max - 1) + "."
+    }
+
+    private class PcTextButton(
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+        message: Component,
+        onPress: OnPress
+    ) : Button(x, y, width, height, message, onPress, DEFAULT_NARRATION) {
+        override fun renderWidget(context: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
+            val base = if (isHovered()) 0xFF858585.toInt() else 0xFF6F6F6F.toInt()
+            val top = if (active) 0xFFB7B7B7.toInt() else 0xFF777777.toInt()
+            val bottom = if (active) 0xFF393939.toInt() else 0xFF2E2E2E.toInt()
+            context.fill(x, y, x + width, y + height, base)
+            context.fill(x, y, x + width, y + 1, top)
+            context.fill(x, y, x + 1, y + height, top)
+            context.fill(x, y + height - 1, x + width, y + height, bottom)
+            context.fill(x + width - 1, y, x + width, y + height, bottom)
+
+            val font = Minecraft.getInstance().font
+            val colour = if (active) 0xFFFFFF else 0xBDBDBD
+            val textX = x + width / 2 - font.width(message) / 2
+            context.drawString(font, message, textX, y + 3, colour, true)
+        }
+    }
+
+    companion object {
+        private const val BASE_WIDTH = 349
+        private const val BASE_HEIGHT = 205
+        private const val PORTRAIT_SIZE = 66
+        private const val EGG_PROGRESS_X = 158
+        private const val EGG_PROGRESS_Y = 44
+        private const val EGG_PROGRESS_WIDTH = 28
+        private const val EGG_PROGRESS_HEIGHT = 30
+        private const val EGG_PROGRESS_FRAMES = 10
+
+        private fun incubatorResource(path: String): ResourceLocation {
+            return ResourceLocation.fromNamespaceAndPath(CobblemonIncubator.MOD_ID, path)
+        }
+
+        private val backgroundResource = incubatorResource("textures/gui/egg_incubator.png")
+        private val eggProgressResource = incubatorResource("textures/gui/egg_frame.png")
+        private val statsChartResource = cobblemonResource("textures/gui/summary/summary_stats_chart.png")
     }
 }

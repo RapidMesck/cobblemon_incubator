@@ -1,35 +1,49 @@
 package com.nbp.cobblemon_incubator.block
 
+import com.cobblemon.mod.common.CobblemonSounds
 import com.mojang.serialization.MapCodec
 import com.nbp.cobblemon_incubator.blockentity.EggIncubatorBlockEntity
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import dev.architectury.registry.menu.MenuRegistry
 import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.sounds.SoundSource
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.ItemInteractionResult
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.context.BlockPlaceContext
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.BaseEntityBlock
 import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.Mirror
 import net.minecraft.world.level.block.RenderShape
+import net.minecraft.world.level.block.Rotation
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.entity.BlockEntityTicker
 import net.minecraft.world.level.block.entity.BlockEntityType
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.block.state.StateDefinition
 import net.minecraft.world.level.block.state.properties.BooleanProperty
+import net.minecraft.world.level.block.state.properties.DirectionProperty
+import net.minecraft.world.level.block.state.properties.BlockStateProperties
+import net.minecraft.world.level.gameevent.GameEvent
 import net.minecraft.world.phys.BlockHitResult
 
 class EggIncubatorBlock(properties: Properties) : BaseEntityBlock(properties) {
     companion object {
         val HAS_EGG: BooleanProperty = BooleanProperty.create("has_egg")
+        val FACING: DirectionProperty = BlockStateProperties.HORIZONTAL_FACING
         val CODEC: MapCodec<EggIncubatorBlock> = simpleCodec(::EggIncubatorBlock)
     }
 
     init {
-        registerDefaultState(stateDefinition.any().setValue(HAS_EGG, false))
+        registerDefaultState(
+            stateDefinition.any()
+                .setValue(HAS_EGG, false)
+                .setValue(FACING, Direction.NORTH)
+        )
     }
 
     override fun codec(): MapCodec<out BaseEntityBlock> = CODEC
@@ -50,6 +64,18 @@ class EggIncubatorBlock(properties: Properties) : BaseEntityBlock(properties) {
     }
 
     override fun getRenderShape(state: BlockState): RenderShape = RenderShape.MODEL
+
+    override fun getStateForPlacement(context: BlockPlaceContext): BlockState {
+        return defaultBlockState().setValue(FACING, context.horizontalDirection.opposite)
+    }
+
+    override fun rotate(state: BlockState, rotation: Rotation): BlockState {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)))
+    }
+
+    override fun mirror(state: BlockState, mirror: Mirror): BlockState {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)))
+    }
 
     override fun useWithoutItem(
         state: BlockState,
@@ -87,7 +113,7 @@ class EggIncubatorBlock(properties: Properties) : BaseEntityBlock(properties) {
     }
 
     override fun createBlockStateDefinition(builder: StateDefinition.Builder<Block, BlockState>) {
-        builder.add(HAS_EGG)
+        builder.add(HAS_EGG, FACING)
     }
 
     private fun openMenu(level: Level, pos: BlockPos, player: Player) {
@@ -95,6 +121,8 @@ class EggIncubatorBlock(properties: Properties) : BaseEntityBlock(properties) {
         val blockEntity = level.getBlockEntity(pos)
         if (blockEntity is EggIncubatorBlockEntity) {
             MenuRegistry.openExtendedMenu(player, blockEntity) { buffer -> buffer.writeBlockPos(pos) }
+            level.playSound(null, pos, CobblemonSounds.PC_ON, SoundSource.BLOCKS, 0.5F, 1F)
+            level.gameEvent(player, GameEvent.BLOCK_OPEN, pos)
         }
     }
 }

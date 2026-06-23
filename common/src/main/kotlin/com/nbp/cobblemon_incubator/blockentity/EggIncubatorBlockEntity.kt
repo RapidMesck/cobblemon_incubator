@@ -1,5 +1,7 @@
 package com.nbp.cobblemon_incubator.blockentity
 
+import com.cobblemon.mod.common.block.PastureBlock
+import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity
 import com.nbp.cobblemon_incubator.block.EggIncubatorBlock
 import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
 import com.nbp.cobblemon_incubator.registry.ModRegistries
@@ -7,12 +9,15 @@ import com.nbp.cobblemon_incubator.util.CobbreedingCompat
 import com.nbp.cobblemon_incubator.util.FilterConfig
 import com.nbp.cobblemon_incubator.util.RejectAction
 import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
 import net.minecraft.core.HolderLookup
 import net.minecraft.core.NonNullList
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.Container
 import net.minecraft.world.ContainerHelper
+import net.minecraft.world.WorldlyContainer
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.inventory.AbstractContainerMenu
 import net.minecraft.world.inventory.ContainerData
@@ -29,8 +34,8 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         const val SLOT_INPUT = 0
         const val SLOT_OUTPUT = 1
         const val SLOT_UPGRADE_START = 2
-        const val SLOT_UPGRADE_END = 5
-        const val CONTAINER_SIZE = 6
+        const val SLOT_UPGRADE_END = 4
+        const val CONTAINER_SIZE = 5
         const val DATA_COUNT = 4
 
         fun serverTick(level: Level, pos: BlockPos, state: BlockState, blockEntity: EggIncubatorBlockEntity) {
@@ -110,6 +115,12 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     private fun tickServer(level: Level, pos: BlockPos, state: BlockState) {
+        pushOutputToAdjacentInventory(level, pos)
+
+        if (items[SLOT_INPUT].isEmpty) {
+            pullEggFromAdjacentPasture(level, pos)
+        }
+
         val egg = items[SLOT_INPUT]
         if (!CobbreedingCompat.isEgg(egg)) {
             cachedTimer = 0
@@ -141,6 +152,106 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         if (nextTimer <= 0) {
             finishEgg(level)
         }
+    }
+
+    private fun pushOutputToAdjacentInventory(level: Level, pos: BlockPos): Boolean {
+        val output = items[SLOT_OUTPUT]
+        if (output.isEmpty) return false
+
+        for (direction in Direction.entries) {
+            val adjacentPos = pos.relative(direction)
+            if (level.getBlockState(adjacentPos).block is PastureBlock) continue
+
+            val destination = level.getBlockEntity(adjacentPos) as? Container ?: continue
+            val insertionFace = direction.opposite
+            val slots = if (destination is WorldlyContainer) {
+                destination.getSlotsForFace(insertionFace)
+            } else {
+                IntArray(destination.containerSize) { it }
+            }
+
+            for (slot in slots) {
+                if (!canInsertInto(destination, slot, output, insertionFace)) continue
+
+                val target = destination.getItem(slot)
+                val maxStackSize = minOf(destination.maxStackSize, output.maxStackSize)
+                val moved = if (target.isEmpty) {
+                    val amount = minOf(output.count, maxStackSize)
+                    val inserted = output.copy()
+                    inserted.count = amount
+                    destination.setItem(slot, inserted)
+                    amount
+                } else if (ItemStack.isSameItemSameComponents(target, output)) {
+                    val amount = minOf(output.count, maxStackSize - target.count)
+                    if (amount <= 0) continue
+                    target.grow(amount)
+                    destination.setItem(slot, target)
+                    amount
+                } else {
+                    continue
+                }
+
+                output.shrink(moved)
+                if (output.isEmpty) items[SLOT_OUTPUT] = ItemStack.EMPTY
+                destination.setChanged()
+                setChanged()
+                level.sendBlockUpdated(
+                    adjacentPos,
+                    level.getBlockState(adjacentPos),
+                    level.getBlockState(adjacentPos),
+                    3
+                )
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun canInsertInto(
+        destination: Container,
+        slot: Int,
+        stack: ItemStack,
+        insertionFace: Direction
+    ): Boolean {
+        if (!destination.canPlaceItem(slot, stack)) return false
+        return destination !is WorldlyContainer ||
+            destination.canPlaceItemThroughFace(slot, stack, insertionFace)
+    }
+
+    private fun pullEggFromAdjacentPasture(level: Level, pos: BlockPos): Boolean {
+        val visitedPastures = mutableSetOf<BlockPos>()
+
+        for (direction in Direction.entries) {
+            val adjacentPos = pos.relative(direction)
+            val adjacentState = level.getBlockState(adjacentPos)
+            val pastureBlock = adjacentState.block as? PastureBlock ?: continue
+            val pasturePos = pastureBlock.getBasePosition(adjacentState, adjacentPos)
+            if (!visitedPastures.add(pasturePos)) continue
+
+            val pastureEntity = level.getBlockEntity(pasturePos) as? PokemonPastureBlockEntity ?: continue
+            val pastureInventory = pastureEntity as? Container ?: continue
+
+            for (slot in 0 until pastureInventory.containerSize) {
+                val candidate = pastureInventory.getItem(slot)
+                if (!CobbreedingCompat.isEgg(candidate)) continue
+
+                val extracted = pastureInventory.removeItem(slot, 1)
+                if (extracted.isEmpty) continue
+
+                setItem(SLOT_INPUT, extracted)
+                pastureEntity.setChanged()
+                level.sendBlockUpdated(
+                    pasturePos,
+                    level.getBlockState(pasturePos),
+                    level.getBlockState(pasturePos),
+                    3
+                )
+                return true
+            }
+        }
+
+        return false
     }
 
     private fun finishEgg(level: Level) {
