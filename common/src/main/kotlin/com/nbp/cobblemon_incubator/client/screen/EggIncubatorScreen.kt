@@ -6,6 +6,7 @@ import com.cobblemon.mod.common.api.pokemon.Natures
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties
 import com.cobblemon.mod.common.api.pokemon.stats.Stat
 import com.cobblemon.mod.common.api.pokemon.stats.Stats
+import com.cobblemon.mod.common.CobblemonSounds
 import com.cobblemon.mod.common.client.CobblemonResources
 import com.cobblemon.mod.common.client.gui.summary.widgets.ModelWidget
 import com.cobblemon.mod.common.util.cobblemonResource
@@ -23,6 +24,8 @@ import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
+import net.minecraft.client.resources.sounds.SimpleSoundInstance
+import net.minecraft.client.sounds.SoundManager
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.player.Inventory
@@ -41,21 +44,21 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     private var modelKey: String? = null
     private var openSelect = OpenSelect.NONE
 
-    private val filterButtons = mutableListOf<Button>()
-    private val natureButtons = mutableListOf<Button>()
-    private val abilityButtons = mutableListOf<Button>()
+    private val filterButtons = mutableListOf<PcTextButton>()
+    private val natureButtons = mutableListOf<PcTextButton>()
+    private val abilityButtons = mutableListOf<PcTextButton>()
 
-    private lateinit var clearButton: Button
-    private lateinit var speciesButton: Button
-    private lateinit var natureSelectButton: Button
-    private lateinit var abilitySelectButton: Button
-    private lateinit var rejectButton: Button
-    private lateinit var ivPrevButton: Button
-    private lateinit var ivNextButton: Button
-    private lateinit var ivOperatorButton: Button
-    private lateinit var ivDownButton: Button
-    private lateinit var ivUpButton: Button
-    private lateinit var ivClearButton: Button
+    private lateinit var clearButton: PcTextButton
+    private lateinit var speciesButton: PcTextButton
+    private lateinit var natureSelectButton: PcTextButton
+    private lateinit var abilitySelectButton: PcTextButton
+    private lateinit var rejectButton: PcTextButton
+    private lateinit var ivPrevButton: PcTextButton
+    private lateinit var ivNextButton: PcTextButton
+    private lateinit var ivOperatorButton: PcTextButton
+    private lateinit var ivDownButton: PcTextButton
+    private lateinit var ivUpButton: PcTextButton
+    private lateinit var ivClearButton: PcTextButton
     private lateinit var natureSearch: EditBox
     private lateinit var abilitySearch: EditBox
 
@@ -84,17 +87,17 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         abilityButtons.clear()
 
         val filterX = leftPos + 274
-        clearButton = addFilterButton(filterX, topPos + 31, 31, 14, 0)
-        rejectButton = addFilterButton(filterX + 34, topPos + 31, 35, 14, 6)
-        speciesButton = addFilterButton(filterX, topPos + 49, 69, 14, 1)
+        clearButton = addFilterButton(filterX, topPos + 31, 32, 14, 0)
+        rejectButton = addFilterButton(filterX + 35, topPos + 31, 34, 14, 6)
+        speciesButton = addFilterButton(filterX, topPos + 50, 69, 14, 1)
 
         natureSelectButton = addLocalButton(filterX, topPos + 69, 69, 14) {
             openSelect = if (openSelect == OpenSelect.NATURE) OpenSelect.NONE else OpenSelect.NATURE
             if (openSelect == OpenSelect.NATURE) natureSearch.setFocused(true)
         }
-        natureSearch = addSearchBox(filterX, topPos + 85, "Nature")
-        repeat(3) { row ->
-            natureButtons += addDynamicFilterButton(filterX, topPos + 99 + row * 14, 69, 13) {
+        natureSearch = addSearchBox(filterX, topPos + 50, "Nature")
+        repeat(7) { row ->
+            natureButtons += addDynamicFilterButton(filterX, topPos + 64 + row * 14, 69, 13) {
                 natureOptions().getOrNull(row)?.let {
                     openSelect = OpenSelect.NONE
                     natureSearch.setFocused(false)
@@ -103,13 +106,13 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             }
         }
 
-        abilitySelectButton = addLocalButton(filterX, topPos + 91, 69, 14) {
+        abilitySelectButton = addLocalButton(filterX, topPos + 88, 69, 14) {
             openSelect = if (openSelect == OpenSelect.ABILITY) OpenSelect.NONE else OpenSelect.ABILITY
             if (openSelect == OpenSelect.ABILITY) abilitySearch.setFocused(true)
         }
-        abilitySearch = addSearchBox(filterX, topPos + 107, "Ability")
-        repeat(3) { row ->
-            abilityButtons += addDynamicFilterButton(filterX, topPos + 121 + row * 14, 69, 13) {
+        abilitySearch = addSearchBox(filterX, topPos + 50, "Ability")
+        repeat(7) { row ->
+            abilityButtons += addDynamicFilterButton(filterX, topPos + 64 + row * 14, 69, 13) {
                 abilityOptions().getOrNull(row)?.let {
                     openSelect = OpenSelect.NONE
                     abilitySearch.setFocused(false)
@@ -118,16 +121,16 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             }
         }
 
-        ivPrevButton = addLocalButton(filterX, topPos + 130, 16, 14) {
+        ivPrevButton = addLocalButton(filterX, topPos + 121, 14, 14) {
             selectedIvIndex = Math.floorMod(selectedIvIndex - 1, FilterConfig.STATS.size)
         }
-        ivNextButton = addLocalButton(filterX + 53, topPos + 130, 16, 14) {
+        ivNextButton = addLocalButton(filterX + 55, topPos + 121, 14, 14) {
             selectedIvIndex = Math.floorMod(selectedIvIndex + 1, FilterConfig.STATS.size)
         }
-        ivOperatorButton = addDynamicFilterButton(filterX, topPos + 149, 25, 14) { 100 + selectedIvIndex }
-        ivDownButton = addDynamicFilterButton(filterX + 28, topPos + 149, 15, 14) { 110 + selectedIvIndex }
-        ivUpButton = addDynamicFilterButton(filterX + 46, topPos + 149, 15, 14) { 120 + selectedIvIndex }
-        ivClearButton = addDynamicFilterButton(filterX + 64, topPos + 149, 10, 14) { 130 + selectedIvIndex }
+        ivOperatorButton = addDynamicFilterButton(filterX, topPos + 158, 23, 14) { 100 + selectedIvIndex }
+        ivDownButton = addDynamicFilterButton(filterX + 26, topPos + 158, 14, 14) { 110 + selectedIvIndex }
+        ivUpButton = addDynamicFilterButton(filterX + 43, topPos + 158, 14, 14) { 120 + selectedIvIndex }
+        ivClearButton = addDynamicFilterButton(filterX + 60, topPos + 158, 9, 14) { 130 + selectedIvIndex }
     }
 
     override fun render(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
@@ -228,8 +231,10 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         if (openSelect == OpenSelect.NONE) {
             val stat = FilterConfig.STATS[selectedIvIndex]
             val rule = menu.filterConfig.ivRules[stat.key]
-            val ruleText = rule?.let { "${it.operator.label}${it.value}" } ?: "Any"
-            drawPcText(guiGraphics, Component.literal("IV ${stat.label}: $ruleText"), 310F, 118F, centered = true)
+            val ruleText = rule?.let { "${it.operator.label} ${it.value}" } ?: "Any"
+            drawSmallText(guiGraphics, Component.literal("IV Filters"), 310F, 109F, centered = true, colour = 0xD8D8D8)
+            drawPcText(guiGraphics, Component.literal(stat.label), 310F, 124F, centered = true)
+            drawSmallText(guiGraphics, Component.literal(ruleText), 310F, 143F, centered = true)
         }
     }
 
@@ -346,11 +351,11 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         return addRenderableWidget(box)
     }
 
-    private fun addFilterButton(x: Int, y: Int, width: Int, height: Int, id: Int): Button {
+    private fun addFilterButton(x: Int, y: Int, width: Int, height: Int, id: Int): PcTextButton {
         return addDynamicFilterButton(x, y, width, height) { id }
     }
 
-    private fun addDynamicFilterButton(x: Int, y: Int, width: Int, height: Int, idProvider: () -> Int): Button {
+    private fun addDynamicFilterButton(x: Int, y: Int, width: Int, height: Int, idProvider: () -> Int): PcTextButton {
         val button = PcTextButton(x, y, width, height, Component.empty()) {
             val id = idProvider()
             if (id >= 0) Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, id)
@@ -359,7 +364,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         return addRenderableWidget(button)
     }
 
-    private fun addLocalButton(x: Int, y: Int, width: Int, height: Int, onPress: () -> Unit): Button {
+    private fun addLocalButton(x: Int, y: Int, width: Int, height: Int, onPress: () -> Unit): PcTextButton {
         val button = PcTextButton(x, y, width, height, Component.empty()) { onPress() }
         filterButtons.add(button)
         return addRenderableWidget(button)
@@ -370,14 +375,22 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         for (button in filterButtons) button.active = hasFilter
 
         val config = menu.filterConfig
+        val normalMode = openSelect == OpenSelect.NONE
         clearButton.message = Component.literal("Clear")
         speciesButton.message = Component.literal("Species: ${(config.species?.let(::displayName) ?: "Use Egg")}".fit(14))
         natureSelectButton.message = Component.literal("Nature: ${displayName(config.nature)}".fit(14))
         abilitySelectButton.message = Component.literal("Ability: ${displayName(config.ability)}".fit(14))
-        rejectButton.message = Component.literal(config.rejectAction.label)
-        natureSelectButton.visible = hasFilter
+        rejectButton.message = Component.literal(if (config.rejectAction.id == "output") "Output" else "Delete")
+
+        clearButton.visible = hasFilter && normalMode
+        rejectButton.visible = hasFilter && normalMode
+        speciesButton.visible = hasFilter && normalMode
+        natureSelectButton.visible = hasFilter && openSelect != OpenSelect.ABILITY
         abilitySelectButton.visible = hasFilter && openSelect != OpenSelect.NATURE
-        val ivVisible = hasFilter && openSelect == OpenSelect.NONE
+        natureSelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.NATURE) 31 else 69)
+        abilitySelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.ABILITY) 31 else 88)
+
+        val ivVisible = hasFilter && normalMode
         ivPrevButton.visible = ivVisible
         ivNextButton.visible = ivVisible
         ivOperatorButton.visible = ivVisible
@@ -412,20 +425,26 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         ivDownButton.message = Component.literal("-")
         ivUpButton.message = Component.literal("+")
         ivClearButton.message = Component.literal("x")
+
+        speciesButton.highlighted = config.species != null
+        natureSelectButton.highlighted = config.nature != null
+        abilitySelectButton.highlighted = config.ability != null
+        rejectButton.danger = config.rejectAction.id == "delete"
+        ivOperatorButton.highlighted = rule != null
     }
 
     private fun natureOptions(): List<SelectOption> {
         val values = listOf<String?>(null) + Natures.all().map { it.name.path }.sorted()
         return values.mapIndexed { index, value -> SelectOption(index, value, displayName(value)) }
             .filter { it.matches(natureSearch.value) }
-            .take(3)
+            .take(7)
     }
 
     private fun abilityOptions(): List<SelectOption> {
         val values = listOf<String?>(null) + Abilities.all().map { it.name }.sorted()
         return values.mapIndexed { index, value -> SelectOption(index, value, displayName(value)) }
             .filter { it.matches(abilitySearch.value) }
-            .take(3)
+            .take(7)
     }
 
     private fun SelectOption.matches(search: String): Boolean {
@@ -499,8 +518,18 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         message: Component,
         onPress: OnPress
     ) : Button(x, y, width, height, message, onPress, DEFAULT_NARRATION) {
+        var highlighted = false
+        var danger = false
+
         override fun renderWidget(context: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
-            val base = if (isHovered()) 0xFF858585.toInt() else 0xFF6F6F6F.toInt()
+            val base = when {
+                danger && isHovered() -> 0xFF9A6666.toInt()
+                danger -> 0xFF805555.toInt()
+                highlighted && isHovered() -> 0xFF78967B.toInt()
+                highlighted -> 0xFF627D65.toInt()
+                isHovered() -> 0xFF858585.toInt()
+                else -> 0xFF6F6F6F.toInt()
+            }
             val top = if (active) 0xFFB7B7B7.toInt() else 0xFF777777.toInt()
             val bottom = if (active) 0xFF393939.toInt() else 0xFF2E2E2E.toInt()
             context.fill(x, y, x + width, y + height, base)
@@ -513,6 +542,10 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             val colour = if (active) 0xFFFFFF else 0xBDBDBD
             val textX = x + width / 2 - font.width(message) / 2
             context.drawString(font, message, textX, y + 3, colour, true)
+        }
+
+        override fun playDownSound(soundManager: SoundManager) {
+            soundManager.play(SimpleSoundInstance.forUI(CobblemonSounds.PC_CLICK, 1F))
         }
     }
 
