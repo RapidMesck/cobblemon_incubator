@@ -1,0 +1,243 @@
+package com.nbp.cobblemon_incubator.blockentity
+
+import com.nbp.cobblemon_incubator.block.EggIncubatorBlock
+import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
+import com.nbp.cobblemon_incubator.registry.ModRegistries
+import com.nbp.cobblemon_incubator.util.CobbreedingCompat
+import com.nbp.cobblemon_incubator.util.FilterConfig
+import com.nbp.cobblemon_incubator.util.RejectAction
+import net.minecraft.core.BlockPos
+import net.minecraft.core.HolderLookup
+import net.minecraft.core.NonNullList
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.ContainerHelper
+import net.minecraft.world.entity.player.Inventory
+import net.minecraft.world.inventory.AbstractContainerMenu
+import net.minecraft.world.inventory.ContainerData
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.entity.BaseContainerBlockEntity
+import net.minecraft.world.level.block.state.BlockState
+import java.util.UUID
+
+class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
+    BaseContainerBlockEntity(ModRegistries.EGG_INCUBATOR_BLOCK_ENTITY.get(), pos, state) {
+
+    companion object {
+        const val SLOT_INPUT = 0
+        const val SLOT_OUTPUT = 1
+        const val SLOT_UPGRADE_START = 2
+        const val SLOT_UPGRADE_END = 5
+        const val CONTAINER_SIZE = 6
+        const val DATA_COUNT = 4
+
+        fun serverTick(level: Level, pos: BlockPos, state: BlockState, blockEntity: EggIncubatorBlockEntity) {
+            blockEntity.tickServer(level, pos, state)
+        }
+    }
+
+    private var items: NonNullList<ItemStack> = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY)
+    private var cachedTimer = 0
+    private var cachedMaxTimer = 0
+
+    private val dataAccess = object : ContainerData {
+        override fun get(index: Int): Int {
+            return when (index) {
+                0 -> cachedTimer
+                1 -> cachedMaxTimer
+                2 -> incubationSpeed()
+                3 -> if (pcUpgradeOwner() != null) 1 else 0
+                else -> 0
+            }
+        }
+
+        override fun set(index: Int, value: Int) {
+            when (index) {
+                0 -> cachedTimer = value
+                1 -> cachedMaxTimer = value
+            }
+        }
+
+        override fun getCount(): Int = DATA_COUNT
+    }
+
+    override fun getContainerSize(): Int = CONTAINER_SIZE
+
+    override fun getItems(): NonNullList<ItemStack> = items
+
+    override fun setItems(items: NonNullList<ItemStack>) {
+        this.items = items
+    }
+
+    override fun getDefaultName(): Component = Component.translatable("container.cobblemon_incubator.egg_incubator")
+
+    override fun createMenu(containerId: Int, inventory: Inventory): AbstractContainerMenu {
+        return EggIncubatorMenu(containerId, inventory, this, dataAccess)
+    }
+
+    override fun loadAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
+        super.loadAdditional(tag, registries)
+        items = NonNullList.withSize(containerSize, ItemStack.EMPTY)
+        ContainerHelper.loadAllItems(tag, items, registries)
+        cachedTimer = tag.getInt("CachedTimer")
+        cachedMaxTimer = tag.getInt("CachedMaxTimer")
+    }
+
+    override fun saveAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
+        super.saveAdditional(tag, registries)
+        ContainerHelper.saveAllItems(tag, items, registries)
+        tag.putInt("CachedTimer", cachedTimer)
+        tag.putInt("CachedMaxTimer", cachedMaxTimer)
+    }
+
+    override fun setItem(slot: Int, stack: ItemStack) {
+        super.setItem(slot, stack)
+        if (slot == SLOT_INPUT) {
+            cachedMaxTimer = CobbreedingCompat.getTimer(stack) ?: cachedMaxTimer
+            updateBlockState()
+        }
+    }
+
+    override fun canPlaceItem(slot: Int, stack: ItemStack): Boolean {
+        return when (slot) {
+            SLOT_INPUT -> CobbreedingCompat.isEgg(stack)
+            SLOT_OUTPUT -> false
+            in SLOT_UPGRADE_START..SLOT_UPGRADE_END -> isUpgrade(stack)
+            else -> false
+        }
+    }
+
+    private fun tickServer(level: Level, pos: BlockPos, state: BlockState) {
+        val egg = items[SLOT_INPUT]
+        if (!CobbreedingCompat.isEgg(egg)) {
+            cachedTimer = 0
+            cachedMaxTimer = 0
+            updateBlockState()
+            return
+        }
+
+        val timer = CobbreedingCompat.getTimer(egg) ?: return
+        if (!passesFilter(egg)) {
+            rejectEgg(level)
+            return
+        }
+
+        if (cachedMaxTimer <= 0 || timer > cachedMaxTimer) cachedMaxTimer = timer
+        cachedTimer = timer
+        updateBlockState()
+
+        if (timer <= 0) {
+            finishEgg(level)
+            return
+        }
+
+        val nextTimer = timer - incubationSpeed()
+        CobbreedingCompat.setTimer(egg, nextTimer)
+        cachedTimer = nextTimer.coerceAtLeast(0)
+        setChanged(level, pos, state)
+
+        if (nextTimer <= 0) {
+            finishEgg(level)
+        }
+    }
+
+    private fun finishEgg(level: Level) {
+        val egg = items[SLOT_INPUT]
+        if (egg.isEmpty) return
+
+        val owner = pcUpgradeOwner()
+        val player = owner?.let { level.server?.playerList?.getPlayer(it) }
+        if (player is ServerPlayer && CobbreedingCompat.hatchToPc(player, owner, egg)) {
+            items[SLOT_INPUT] = ItemStack.EMPTY
+            updateBlockState()
+            setChanged()
+            return
+        }
+
+        if (items[SLOT_OUTPUT].isEmpty) {
+            items[SLOT_OUTPUT] = egg.copy()
+            items[SLOT_INPUT] = ItemStack.EMPTY
+            updateBlockState()
+            setChanged()
+        }
+    }
+
+    fun incubationSpeed(): Int = if (hasUpgrade(ModRegistries.SPEED_UPGRADE.get())) 10 else 5
+
+    fun filterConfig(): FilterConfig? {
+        for (slot in SLOT_UPGRADE_START..SLOT_UPGRADE_END) {
+            val stack = items[slot]
+            if (stack.`is`(ModRegistries.FILTER_UPGRADE.get())) return FilterConfig.fromStack(stack)
+        }
+        return null
+    }
+
+    fun pcUpgradeOwner(): UUID? {
+        for (slot in SLOT_UPGRADE_START..SLOT_UPGRADE_END) {
+            val stack = items[slot]
+            if (stack.`is`(ModRegistries.PC_UPGRADE.get())) {
+                val uuid = stack.get(ModRegistries.PC_UPGRADE_OWNER_UUID.get()) ?: return null
+                return runCatching { UUID.fromString(uuid) }.getOrNull()
+            }
+        }
+        return null
+    }
+
+    private fun hasUpgrade(item: net.minecraft.world.item.Item): Boolean {
+        for (slot in SLOT_UPGRADE_START..SLOT_UPGRADE_END) {
+            if (items[slot].`is`(item)) return true
+        }
+        return false
+    }
+
+    private fun isUpgrade(stack: ItemStack): Boolean {
+        return stack.`is`(ModRegistries.SPEED_UPGRADE.get()) ||
+            stack.`is`(ModRegistries.PC_UPGRADE.get()) ||
+            stack.`is`(ModRegistries.FILTER_UPGRADE.get())
+    }
+
+    private fun passesFilter(egg: ItemStack): Boolean {
+        val config = filterConfig() ?: return true
+        if (!config.hasCriteria()) return true
+        val properties = CobbreedingCompat.extractProperties(egg) ?: return false
+        return config.matches(properties)
+    }
+
+    private fun rejectEgg(level: Level) {
+        val config = filterConfig() ?: return
+        val egg = items[SLOT_INPUT]
+        if (egg.isEmpty) return
+
+        when (config.rejectAction) {
+            RejectAction.DELETE -> {
+                items[SLOT_INPUT] = ItemStack.EMPTY
+                cachedTimer = 0
+                cachedMaxTimer = 0
+                updateBlockState()
+                setChanged()
+            }
+            RejectAction.OUTPUT -> {
+                if (items[SLOT_OUTPUT].isEmpty) {
+                    items[SLOT_OUTPUT] = egg.copy()
+                    items[SLOT_INPUT] = ItemStack.EMPTY
+                    cachedTimer = 0
+                    cachedMaxTimer = 0
+                    updateBlockState()
+                    setChanged()
+                }
+            }
+        }
+        level.updateNeighbourForOutputSignal(worldPosition, blockState.block)
+    }
+
+    private fun updateBlockState() {
+        val level = level ?: return
+        val state = blockState
+        val hasEgg = CobbreedingCompat.isEgg(items[SLOT_INPUT])
+        if (state.getValue(EggIncubatorBlock.HAS_EGG) != hasEgg) {
+            level.setBlock(worldPosition, state.setValue(EggIncubatorBlock.HAS_EGG, hasEgg), 3)
+        }
+    }
+}

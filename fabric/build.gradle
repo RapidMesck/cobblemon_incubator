@@ -28,6 +28,8 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
     modImplementation "net.fabricmc:fabric-language-kotlin:${rootProject.fabric_kotlin_version}"
 
+    modImplementation "dev.architectury:architectury-fabric:${rootProject.architectury_api_version}"
+
     modImplementation "com.cobblemon:fabric:${rootProject.cobblemon_version}"
 
     common(project(path: ":common", configuration: "namedElements")) {

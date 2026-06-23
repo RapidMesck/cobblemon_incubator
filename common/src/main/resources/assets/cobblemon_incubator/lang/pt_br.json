@@ -1,0 +1,12 @@
+{
+  "block.cobblemon_incubator.egg_incubator": "Incubadora de Ovo",
+  "container.cobblemon_incubator.egg_incubator": "Incubadora de Ovo",
+  "item.cobblemon_incubator.speed_upgrade": "Upgrade de Velocidade",
+  "item.cobblemon_incubator.pc_upgrade": "Upgrade de PC",
+  "item.cobblemon_incubator.filter_upgrade": "Upgrade de Filtro",
+  "item.cobblemon_incubator.filter_upgrade.empty": "Nenhum criterio de filtro configurado",
+  "item.cobblemon_incubator.filter_upgrade.reject": "Ovos rejeitados: %s",
+  "item.cobblemon_incubator.pc_upgrade.bound": "Upgrade de PC vinculado a %s",
+  "item.cobblemon_incubator.pc_upgrade.owner": "Dono: %s",
+  "item.cobblemon_incubator.pc_upgrade.unbound": "Clique com o botao direito para vincular este upgrade"
+}

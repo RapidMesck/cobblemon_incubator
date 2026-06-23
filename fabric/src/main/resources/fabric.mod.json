@@ -12,12 +12,20 @@
         "adapter": "kotlin",
         "value": "com.nbp.cobblemon_incubator.fabric.CobblemonIncubatorFabric"
       }
+    ],
+    "client": [
+      {
+        "adapter": "kotlin",
+        "value": "com.nbp.cobblemon_incubator.fabric.CobblemonIncubatorFabricClient"
+      }
     ]
   },
   "depends": {
     "fabricloader": ">=0.17.0",
     "minecraft": "1.21.1",
     "fabric-language-kotlin": "*",
-    "cobblemon": "*"
+    "cobblemon": "*",
+    "cobbreeding": "*",
+    "architectury": "*"
   }
 }

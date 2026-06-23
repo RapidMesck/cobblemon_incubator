@@ -1,0 +1,12 @@
+{
+  "block.cobblemon_incubator.egg_incubator": "Egg Incubator",
+  "container.cobblemon_incubator.egg_incubator": "Egg Incubator",
+  "item.cobblemon_incubator.speed_upgrade": "Speed Upgrade",
+  "item.cobblemon_incubator.pc_upgrade": "PC Upgrade",
+  "item.cobblemon_incubator.filter_upgrade": "Filter Upgrade",
+  "item.cobblemon_incubator.filter_upgrade.empty": "No filter criteria configured",
+  "item.cobblemon_incubator.filter_upgrade.reject": "Rejected eggs: %s",
+  "item.cobblemon_incubator.pc_upgrade.bound": "PC Upgrade bound to %s",
+  "item.cobblemon_incubator.pc_upgrade.owner": "Owner: %s",
+  "item.cobblemon_incubator.pc_upgrade.unbound": "Right-click to bind this upgrade"
+}

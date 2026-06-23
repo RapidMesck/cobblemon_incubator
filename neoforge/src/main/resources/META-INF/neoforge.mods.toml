@@ -31,3 +31,17 @@ type = "required"
 versionRange = "*"
 ordering = "AFTER"
 side = "BOTH"
+
+[[dependencies.cobblemon_incubator]]
+modId = "cobbreeding"
+type = "required"
+versionRange = "*"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.cobblemon_incubator]]
+modId = "architectury"
+type = "required"
+versionRange = "*"
+ordering = "AFTER"
+side = "BOTH"

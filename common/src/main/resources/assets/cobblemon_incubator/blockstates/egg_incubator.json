@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "has_egg=false": {
+      "model": "cobblemon_incubator:block/egg_incubator_empty"
+    },
+    "has_egg=true": {
+      "model": "cobblemon_incubator:block/egg_incubator_occupied"
+    }
+  }
+}
