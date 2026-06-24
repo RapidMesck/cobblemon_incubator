@@ -1,5 +1,6 @@
 package com.nbp.cobblemon_incubator
 
+import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import org.slf4j.LoggerFactory
 
@@ -9,6 +10,7 @@ object CobblemonIncubator {
     val logger = LoggerFactory.getLogger("CobblemonIncubator")
 
     fun init() {
+        IncubatorConfig.load()
         ModRegistries.register()
         logger.info("Cobblemon Incubator loaded!")
     }

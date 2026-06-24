@@ -34,6 +34,7 @@ import net.minecraft.world.phys.BlockHitResult
 class EggIncubatorBlock(properties: Properties) : BaseEntityBlock(properties) {
     companion object {
         val HAS_EGG: BooleanProperty = BooleanProperty.create("has_egg")
+        val OPEN: BooleanProperty = BooleanProperty.create("open")
         val FACING: DirectionProperty = BlockStateProperties.HORIZONTAL_FACING
         val CODEC: MapCodec<EggIncubatorBlock> = simpleCodec(::EggIncubatorBlock)
     }
@@ -42,6 +43,7 @@ class EggIncubatorBlock(properties: Properties) : BaseEntityBlock(properties) {
         registerDefaultState(
             stateDefinition.any()
                 .setValue(HAS_EGG, false)
+                .setValue(OPEN, false)
                 .setValue(FACING, Direction.NORTH)
         )
     }
@@ -113,7 +115,7 @@ class EggIncubatorBlock(properties: Properties) : BaseEntityBlock(properties) {
     }
 
     override fun createBlockStateDefinition(builder: StateDefinition.Builder<Block, BlockState>) {
-        builder.add(HAS_EGG, FACING)
+        builder.add(HAS_EGG, OPEN, FACING)
     }
 
     private fun openMenu(level: Level, pos: BlockPos, player: Player) {

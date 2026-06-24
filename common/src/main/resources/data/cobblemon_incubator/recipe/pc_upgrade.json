@@ -1,22 +1,22 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "RSR",
-    "SCS",
-    "RSR"
+    "RER",
+    "ECE",
+    "RER"
   ],
   "key": {
     "R": {
       "item": "minecraft:redstone"
     },
-    "S": {
-      "item": "minecraft:sugar"
+    "E": {
+      "item": "minecraft:ender_pearl"
     },
     "C": {
-      "item": "minecraft:copper_ingot"
+      "item": "cobblemon:upgrade"
     }
   },
   "result": {
-    "id": "cobblemon_incubator:speed_upgrade"
+    "id": "cobblemon_incubator:pc_upgrade"
   }
 }

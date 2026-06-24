@@ -1,12 +1,22 @@
 {
+  "itemGroup.cobblemon_incubator.main": "Cobblemon Incubator",
   "block.cobblemon_incubator.egg_incubator": "Egg Incubator",
   "container.cobblemon_incubator.egg_incubator": "Egg Incubator",
   "item.cobblemon_incubator.speed_upgrade": "Speed Upgrade",
+  "item.cobblemon_incubator.speed_upgrade.description": "Multiplies the incubator speed by %sx.",
   "item.cobblemon_incubator.pc_upgrade": "PC Upgrade",
+  "item.cobblemon_incubator.pc_upgrade.description": "Sends hatched Pokemon directly to the linked PC.",
   "item.cobblemon_incubator.filter_upgrade": "Filter Upgrade",
+  "item.cobblemon_incubator.filter_upgrade.description": "Filters eggs by species, Nature, Ability, and IVs.",
   "item.cobblemon_incubator.filter_upgrade.empty": "No filter criteria configured",
   "item.cobblemon_incubator.filter_upgrade.reject": "Rejected eggs: %s",
   "item.cobblemon_incubator.pc_upgrade.bound": "PC Upgrade bound to %s",
   "item.cobblemon_incubator.pc_upgrade.owner": "Owner: %s",
-  "item.cobblemon_incubator.pc_upgrade.unbound": "Right-click to bind this upgrade"
+  "item.cobblemon_incubator.pc_upgrade.unbound": "Right-click to bind this upgrade",
+  "message.cobblemon_incubator.sent_to_pc": "%s hatched and was automatically sent to your PC!",
+  "message.cobblemon_incubator.pc_full": "Your PC is full. The ready egg was moved to the output slot.",
+  "tooltip.cobblemon_incubator.nature": "Nature: %s",
+  "tooltip.cobblemon_incubator.ability": "Ability: %s",
+  "tooltip.cobblemon_incubator.ivs": "IVs: HP %s | Atk %s | Def %s | SpA %s | SpD %s | Spe %s",
+  "tooltip.cobblemon_incubator.ivs_unknown": "Unknown IVs"
 }

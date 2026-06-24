@@ -1,8 +1,8 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "RQR",
-    "QCQ",
+    "RCR",
+    "QUQ",
     "RQR"
   ],
   "key": {
@@ -14,6 +14,9 @@
     },
     "C": {
       "item": "minecraft:comparator"
+    },
+    "U": {
+      "item": "cobblemon:upgrade"
     }
   },
   "result": {

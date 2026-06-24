@@ -6,7 +6,9 @@ import com.nbp.cobblemon_incubator.block.EggIncubatorBlock
 import com.nbp.cobblemon_incubator.blockentity.EggIncubatorBlockEntity
 import com.nbp.cobblemon_incubator.item.FilterUpgradeItem
 import com.nbp.cobblemon_incubator.item.PcUpgradeItem
+import com.nbp.cobblemon_incubator.item.SpeedUpgradeItem
 import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
+import dev.architectury.registry.CreativeTabRegistry
 import dev.architectury.registry.menu.MenuRegistry
 import dev.architectury.registry.registries.DeferredRegister
 import dev.architectury.registry.registries.RegistrySupplier
@@ -15,7 +17,9 @@ import net.minecraft.core.registries.Registries
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.item.BlockItem
+import net.minecraft.world.item.CreativeModeTab
 import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.SoundType
 import net.minecraft.world.level.block.entity.BlockEntityType
@@ -27,6 +31,8 @@ object ModRegistries {
     private val BLOCK_ENTITY_TYPES: DeferredRegister<BlockEntityType<*>> =
         DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.BLOCK_ENTITY_TYPE)
     private val MENU_TYPES: DeferredRegister<MenuType<*>> = DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.MENU)
+    private val CREATIVE_MODE_TABS: DeferredRegister<CreativeModeTab> =
+        DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.CREATIVE_MODE_TAB)
     private val DATA_COMPONENT_TYPES: DeferredRegister<DataComponentType<*>> =
         DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.DATA_COMPONENT_TYPE)
 
@@ -44,7 +50,7 @@ object ModRegistries {
     }
 
     val SPEED_UPGRADE: RegistrySupplier<Item> = ITEMS.register("speed_upgrade") {
-        Item(Item.Properties().stacksTo(16))
+        SpeedUpgradeItem(Item.Properties().stacksTo(16))
     }
 
     val PC_UPGRADE: RegistrySupplier<Item> = ITEMS.register("pc_upgrade") {
@@ -53,6 +59,20 @@ object ModRegistries {
 
     val FILTER_UPGRADE: RegistrySupplier<Item> = ITEMS.register("filter_upgrade") {
         FilterUpgradeItem(Item.Properties().stacksTo(1))
+    }
+
+    val CREATIVE_TAB: RegistrySupplier<CreativeModeTab> = CREATIVE_MODE_TABS.register("main") {
+        CreativeTabRegistry.create { builder ->
+            builder
+                .title(net.minecraft.network.chat.Component.translatable("itemGroup.cobblemon_incubator.main"))
+                .icon { ItemStack(EGG_INCUBATOR_ITEM.get()) }
+                .displayItems { _, output ->
+                    output.accept(EGG_INCUBATOR_ITEM.get())
+                    output.accept(SPEED_UPGRADE.get())
+                    output.accept(PC_UPGRADE.get())
+                    output.accept(FILTER_UPGRADE.get())
+                }
+        }
     }
 
     val PC_UPGRADE_OWNER_UUID: RegistrySupplier<DataComponentType<String>> = DATA_COMPONENT_TYPES.register("pc_upgrade_owner_uuid") {
@@ -81,6 +101,7 @@ object ModRegistries {
         DATA_COMPONENT_TYPES.register()
         BLOCKS.register()
         ITEMS.register()
+        CREATIVE_MODE_TABS.register()
         BLOCK_ENTITY_TYPES.register()
         MENU_TYPES.register()
     }

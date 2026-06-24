@@ -108,7 +108,8 @@ class EggIncubatorMenu : AbstractContainerMenu {
             in 120..125 -> current.adjustIv(id - 120, 1)
             in 130..135 -> current.clearIv(id - 130)
             in 2000..2099 -> current.setNatureByIndex(id - 2000)
-            in 3000..9999 -> current.setAbilityByIndex(id - 3000)
+            in 3000..3999 -> current.setAbilityByIndex(id - 3000)
+            in 4000..9999 -> current.setSpeciesByIndex(id - 4000)
             else -> return false
         }
         FilterConfig.save(filter, next)

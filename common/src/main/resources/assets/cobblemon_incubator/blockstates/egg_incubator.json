@@ -1,33 +1,63 @@
 {
   "variants": {
-    "facing=north,has_egg=false": {
+    "facing=north,has_egg=false,open=false": {
       "model": "cobblemon_incubator:block/egg_incubator_empty"
     },
-    "facing=east,has_egg=false": {
+    "facing=east,has_egg=false,open=false": {
       "model": "cobblemon_incubator:block/egg_incubator_empty",
       "y": 90
     },
-    "facing=south,has_egg=false": {
+    "facing=south,has_egg=false,open=false": {
       "model": "cobblemon_incubator:block/egg_incubator_empty",
       "y": 180
     },
-    "facing=west,has_egg=false": {
+    "facing=west,has_egg=false,open=false": {
       "model": "cobblemon_incubator:block/egg_incubator_empty",
       "y": 270
     },
-    "facing=north,has_egg=true": {
+    "facing=north,has_egg=true,open=false": {
       "model": "cobblemon_incubator:block/egg_incubator_occupied"
     },
-    "facing=east,has_egg=true": {
+    "facing=east,has_egg=true,open=false": {
       "model": "cobblemon_incubator:block/egg_incubator_occupied",
       "y": 90
     },
-    "facing=south,has_egg=true": {
+    "facing=south,has_egg=true,open=false": {
       "model": "cobblemon_incubator:block/egg_incubator_occupied",
       "y": 180
     },
-    "facing=west,has_egg=true": {
+    "facing=west,has_egg=true,open=false": {
       "model": "cobblemon_incubator:block/egg_incubator_occupied",
+      "y": 270
+    },
+    "facing=north,has_egg=false,open=true": {
+      "model": "cobblemon_incubator:block/egg_incubator_empty_on"
+    },
+    "facing=east,has_egg=false,open=true": {
+      "model": "cobblemon_incubator:block/egg_incubator_empty_on",
+      "y": 90
+    },
+    "facing=south,has_egg=false,open=true": {
+      "model": "cobblemon_incubator:block/egg_incubator_empty_on",
+      "y": 180
+    },
+    "facing=west,has_egg=false,open=true": {
+      "model": "cobblemon_incubator:block/egg_incubator_empty_on",
+      "y": 270
+    },
+    "facing=north,has_egg=true,open=true": {
+      "model": "cobblemon_incubator:block/egg_incubator_occupied_on"
+    },
+    "facing=east,has_egg=true,open=true": {
+      "model": "cobblemon_incubator:block/egg_incubator_occupied_on",
+      "y": 90
+    },
+    "facing=south,has_egg=true,open=true": {
+      "model": "cobblemon_incubator:block/egg_incubator_occupied_on",
+      "y": 180
+    },
+    "facing=west,has_egg=true,open=true": {
+      "model": "cobblemon_incubator:block/egg_incubator_occupied_on",
       "y": 270
     }
   }

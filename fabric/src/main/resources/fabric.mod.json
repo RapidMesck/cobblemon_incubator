@@ -3,7 +3,7 @@
   "id": "cobblemon_incubator",
   "version": "${version}",
   "name": "Cobblemon Incubator",
-  "description": "Addon para Cobblemon usando Kotlin e Architectury.",
+  "description": "A Cobblemon and Cobbreeding addon that adds a customizable Egg Incubator with faster hatching, advanced filters, PC delivery, and Pasture automation.",
   "authors": ["RapidMesck"],
   "environment": "*",
   "entrypoints": {

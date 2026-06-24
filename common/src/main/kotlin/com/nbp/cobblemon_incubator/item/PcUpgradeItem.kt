@@ -1,6 +1,7 @@
 package com.nbp.cobblemon_incubator.item
 
 import com.nbp.cobblemon_incubator.registry.ModRegistries
+import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResultHolder
@@ -28,11 +29,21 @@ class PcUpgradeItem(properties: Properties) : Item(properties) {
         tooltipFlag: TooltipFlag
     ) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag)
+        tooltipComponents.add(
+            Component.translatable("item.cobblemon_incubator.pc_upgrade.description")
+                .withStyle(ChatFormatting.GRAY)
+        )
         val owner = stack.get(ModRegistries.PC_UPGRADE_OWNER_NAME.get())
         if (owner == null) {
-            tooltipComponents.add(Component.translatable("item.cobblemon_incubator.pc_upgrade.unbound"))
+            tooltipComponents.add(
+                Component.translatable("item.cobblemon_incubator.pc_upgrade.unbound")
+                    .withStyle(ChatFormatting.YELLOW)
+            )
         } else {
-            tooltipComponents.add(Component.translatable("item.cobblemon_incubator.pc_upgrade.owner", owner))
+            tooltipComponents.add(
+                Component.translatable("item.cobblemon_incubator.pc_upgrade.owner", owner)
+                    .withStyle(ChatFormatting.AQUA)
+            )
         }
     }
 }

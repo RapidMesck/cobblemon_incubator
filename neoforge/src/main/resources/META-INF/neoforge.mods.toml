@@ -8,7 +8,7 @@ version = "${version}"
 displayName = "Cobblemon Incubator"
 authors = "RapidMesck"
 description = '''
-Addon para Cobblemon usando Kotlin, Fabric, NeoForge e Architectury.
+A Cobblemon and Cobbreeding addon that adds a customizable Egg Incubator with faster hatching, advanced filters, PC delivery, and Pasture automation.
 '''
 
 [[dependencies.cobblemon_incubator]]

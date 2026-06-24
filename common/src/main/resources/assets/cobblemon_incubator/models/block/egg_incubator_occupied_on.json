@@ -1,0 +1,7 @@
+{
+  "parent": "cobblemon_incubator:block/egg_incubator_occupied",
+  "textures": {
+    "0": "cobblemon_incubator:block/egg_incubator_on",
+    "particle": "cobblemon_incubator:block/egg_incubator_on"
+  }
+}

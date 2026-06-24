@@ -3,6 +3,7 @@ package com.nbp.cobblemon_incubator.util
 import com.cobblemon.mod.common.api.abilities.Abilities
 import com.cobblemon.mod.common.api.pokemon.Natures
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties
+import com.cobblemon.mod.common.api.pokemon.PokemonSpecies
 import com.cobblemon.mod.common.api.pokemon.stats.Stat
 import com.cobblemon.mod.common.api.pokemon.stats.Stats
 import com.nbp.cobblemon_incubator.registry.ModRegistries
@@ -99,6 +100,13 @@ data class FilterConfig(
         return copy(species = if (nextSpecies != null && normalize(nextSpecies) != current) nextSpecies else null)
     }
 
+    fun setSpeciesByIndex(index: Int): FilterConfig {
+        val nextSpecies = speciesOptions().getOrNull(index)
+        val validAbilities = abilityOptions(nextSpecies).mapNotNull { normalize(it) }.toSet()
+        val nextAbility = ability?.takeIf { normalize(it) in validAbilities }
+        return copy(species = nextSpecies, ability = nextAbility)
+    }
+
     fun cycleNature(delta: Int): FilterConfig {
         val options = natureOptions()
         return copy(nature = cycleOption(options, nature, delta))
@@ -116,7 +124,7 @@ data class FilterConfig(
     }
 
     fun setAbilityByIndex(index: Int): FilterConfig {
-        val options = abilityOptions()
+        val options = abilityOptions(species)
         return copy(ability = options.getOrNull(index))
     }
 
@@ -164,7 +172,23 @@ data class FilterConfig(
 
     private fun natureOptions(): List<String?> = listOf<String?>(null) + Natures.all().map { it.name.path }.sorted()
 
-    private fun abilityOptions(): List<String?> = listOf<String?>(null) + Abilities.all().map { it.name }.sorted()
+    private fun speciesOptions(): List<String?> {
+        return listOf<String?>(null) + PokemonSpecies.species
+            .map { it.resourceIdentifier.toString() }
+            .sorted()
+    }
+
+    private fun abilityOptions(speciesId: String? = species): List<String?> {
+        val species = speciesId?.let { id ->
+            PokemonSpecies.species.firstOrNull { normalize(it.resourceIdentifier.toString()) == normalize(id) }
+        }
+        val abilities = species?.abilities
+            ?.map { it.template.name }
+            ?.distinct()
+            ?.sorted()
+            ?: Abilities.all().map { it.name }.sorted()
+        return listOf<String?>(null) + abilities
+    }
 
     private fun normalize(value: String?): String? {
         return value

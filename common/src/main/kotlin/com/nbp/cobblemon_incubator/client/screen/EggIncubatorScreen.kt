@@ -4,6 +4,7 @@ import com.cobblemon.mod.common.api.abilities.Abilities
 import com.cobblemon.mod.common.api.gui.blitk
 import com.cobblemon.mod.common.api.pokemon.Natures
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties
+import com.cobblemon.mod.common.api.pokemon.PokemonSpecies
 import com.cobblemon.mod.common.api.pokemon.stats.Stat
 import com.cobblemon.mod.common.api.pokemon.stats.Stats
 import com.cobblemon.mod.common.CobblemonSounds
@@ -37,7 +38,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     AbstractContainerScreen<EggIncubatorMenu>(menu, inventory, title) {
 
     private data class SelectOption(val index: Int, val value: String?, val label: String)
-    private enum class OpenSelect { NONE, NATURE, ABILITY }
+    private enum class OpenSelect { NONE, SPECIES, NATURE, ABILITY }
 
     private var selectedIvIndex = 0
     private var modelWidget: ModelWidget? = null
@@ -45,6 +46,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     private var openSelect = OpenSelect.NONE
 
     private val filterButtons = mutableListOf<PcTextButton>()
+    private val speciesButtons = mutableListOf<PcTextButton>()
     private val natureButtons = mutableListOf<PcTextButton>()
     private val abilityButtons = mutableListOf<PcTextButton>()
 
@@ -59,6 +61,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     private lateinit var ivDownButton: PcTextButton
     private lateinit var ivUpButton: PcTextButton
     private lateinit var ivClearButton: PcTextButton
+    private lateinit var speciesSearch: EditBox
     private lateinit var natureSearch: EditBox
     private lateinit var abilitySearch: EditBox
 
@@ -83,13 +86,27 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     override fun init() {
         super.init()
         filterButtons.clear()
+        speciesButtons.clear()
         natureButtons.clear()
         abilityButtons.clear()
 
         val filterX = leftPos + 274
         clearButton = addFilterButton(filterX, topPos + 31, 32, 14, 0)
         rejectButton = addFilterButton(filterX + 35, topPos + 31, 34, 14, 6)
-        speciesButton = addFilterButton(filterX, topPos + 50, 69, 14, 1)
+        speciesButton = addLocalButton(filterX, topPos + 50, 69, 14) {
+            openSelect = if (openSelect == OpenSelect.SPECIES) OpenSelect.NONE else OpenSelect.SPECIES
+            if (openSelect == OpenSelect.SPECIES) speciesSearch.setFocused(true)
+        }
+        speciesSearch = addSearchBox(filterX, topPos + 50, "Species")
+        repeat(7) { row ->
+            speciesButtons += addDynamicFilterButton(filterX, topPos + 64 + row * 14, 69, 13) {
+                speciesOptions().getOrNull(row)?.let {
+                    openSelect = OpenSelect.NONE
+                    speciesSearch.setFocused(false)
+                    4000 + it.index
+                } ?: -1
+            }
+        }
 
         natureSelectButton = addLocalButton(filterX, topPos + 69, 69, 14) {
             openSelect = if (openSelect == OpenSelect.NATURE) OpenSelect.NONE else OpenSelect.NATURE
@@ -156,6 +173,14 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             width = BASE_WIDTH,
             height = BASE_HEIGHT
         )
+        blitk(
+            matrixStack = matrices,
+            texture = portraitBackgroundResource,
+            x = left + PORTRAIT_X,
+            y = top + PORTRAIT_Y,
+            width = PORTRAIT_SIZE,
+            height = PORTRAIT_SIZE
+        )
         modelWidget?.render(guiGraphics, mouseX, mouseY, partialTick)
 
         renderEggProgress(guiGraphics, left, top)
@@ -192,6 +217,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     }
 
     private fun renderFilterSearchFrames(guiGraphics: GuiGraphics) {
+        if (speciesSearch.visible) drawSearchFrame(guiGraphics, speciesSearch.x, speciesSearch.y, speciesSearch.width, speciesSearch.height)
         if (natureSearch.visible) drawSearchFrame(guiGraphics, natureSearch.x, natureSearch.y, natureSearch.width, natureSearch.height)
         if (abilitySearch.visible) drawSearchFrame(guiGraphics, abilitySearch.x, abilitySearch.y, abilitySearch.width, abilitySearch.height)
     }
@@ -246,8 +272,8 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             ?: runCatching { properties?.asRenderablePokemon() }.getOrNull()
         modelWidget = renderable?.let {
             ModelWidget(
-                pX = leftPos + 6,
-                pY = topPos + 27,
+                pX = leftPos + PORTRAIT_X,
+                pY = topPos + PORTRAIT_Y,
                 pWidth = PORTRAIT_SIZE,
                 pHeight = PORTRAIT_SIZE,
                 pokemon = it,
@@ -385,8 +411,10 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         clearButton.visible = hasFilter && normalMode
         rejectButton.visible = hasFilter && normalMode
         speciesButton.visible = hasFilter && normalMode
-        natureSelectButton.visible = hasFilter && openSelect != OpenSelect.ABILITY
-        abilitySelectButton.visible = hasFilter && openSelect != OpenSelect.NATURE
+        speciesButton.visible = hasFilter && (normalMode || openSelect == OpenSelect.SPECIES)
+        natureSelectButton.visible = hasFilter && (normalMode || openSelect == OpenSelect.NATURE)
+        abilitySelectButton.visible = hasFilter && (normalMode || openSelect == OpenSelect.ABILITY)
+        speciesButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.SPECIES) 31 else 50)
         natureSelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.NATURE) 31 else 69)
         abilitySelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.ABILITY) 31 else 88)
 
@@ -398,10 +426,19 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         ivUpButton.visible = ivVisible
         ivClearButton.visible = ivVisible
 
+        speciesSearch.visible = hasFilter && openSelect == OpenSelect.SPECIES
+        speciesSearch.active = speciesSearch.visible
         natureSearch.visible = hasFilter && openSelect == OpenSelect.NATURE
         natureSearch.active = natureSearch.visible
         abilitySearch.visible = hasFilter && openSelect == OpenSelect.ABILITY
         abilitySearch.active = abilitySearch.visible
+
+        val speciesOptions = speciesOptions()
+        speciesButtons.forEachIndexed { index, button ->
+            val option = speciesOptions.getOrNull(index)
+            button.visible = hasFilter && openSelect == OpenSelect.SPECIES && option != null
+            button.message = Component.literal(option?.label?.fit(14) ?: "")
+        }
 
         val natureOptions = natureOptions()
         natureButtons.forEachIndexed { index, button ->
@@ -440,8 +477,28 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             .take(7)
     }
 
+    private fun speciesOptions(): List<SelectOption> {
+        val values = listOf<Pair<String?, String>>(null to "Any") + PokemonSpecies.species
+            .sortedBy { it.resourceIdentifier.toString() }
+            .map { it.resourceIdentifier.toString() to it.translatedName.string }
+        return values.mapIndexed { index, (value, label) -> SelectOption(index, value, label) }
+            .filter { it.matches(speciesSearch.value) }
+            .take(7)
+    }
+
     private fun abilityOptions(): List<SelectOption> {
-        val values = listOf<String?>(null) + Abilities.all().map { it.name }.sorted()
+        val selectedSpecies = menu.filterConfig.species?.let { id ->
+            PokemonSpecies.species.firstOrNull {
+                it.resourceIdentifier.toString().equals(id, ignoreCase = true) ||
+                    it.resourceIdentifier.path.equals(id.substringAfter(':'), ignoreCase = true)
+            }
+        }
+        val abilities = selectedSpecies?.abilities
+            ?.map { it.template.name }
+            ?.distinct()
+            ?.sorted()
+            ?: Abilities.all().map { it.name }.sorted()
+        val values = listOf<String?>(null) + abilities
         return values.mapIndexed { index, value -> SelectOption(index, value, displayName(value)) }
             .filter { it.matches(abilitySearch.value) }
             .take(7)
@@ -552,6 +609,8 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     companion object {
         private const val BASE_WIDTH = 349
         private const val BASE_HEIGHT = 205
+        private const val PORTRAIT_X = 6
+        private const val PORTRAIT_Y = 27
         private const val PORTRAIT_SIZE = 66
         private const val EGG_PROGRESS_X = 158
         private const val EGG_PROGRESS_Y = 44
@@ -564,6 +623,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         }
 
         private val backgroundResource = incubatorResource("textures/gui/egg_incubator.png")
+        private val portraitBackgroundResource = incubatorResource("textures/gui/portrait_background.png")
         private val eggProgressResource = incubatorResource("textures/gui/egg_frame.png")
         private val statsChartResource = cobblemonResource("textures/gui/summary/summary_stats_chart.png")
     }

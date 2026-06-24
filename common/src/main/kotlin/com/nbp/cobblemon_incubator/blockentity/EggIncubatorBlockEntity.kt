@@ -3,6 +3,7 @@ package com.nbp.cobblemon_incubator.blockentity
 import com.cobblemon.mod.common.block.PastureBlock
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity
 import com.nbp.cobblemon_incubator.block.EggIncubatorBlock
+import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import com.nbp.cobblemon_incubator.util.CobbreedingCompat
@@ -19,6 +20,7 @@ import net.minecraft.world.Container
 import net.minecraft.world.ContainerHelper
 import net.minecraft.world.WorldlyContainer
 import net.minecraft.world.entity.player.Inventory
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.inventory.AbstractContainerMenu
 import net.minecraft.world.inventory.ContainerData
 import net.minecraft.world.item.ItemStack
@@ -46,6 +48,7 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
     private var items: NonNullList<ItemStack> = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY)
     private var cachedTimer = 0
     private var cachedMaxTimer = 0
+    private var openers = 0
 
     private val dataAccess = object : ContainerData {
         override fun get(index: Int): Int {
@@ -82,6 +85,18 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         return EggIncubatorMenu(containerId, inventory, this, dataAccess)
     }
 
+    override fun startOpen(player: Player) {
+        if (player.isSpectator) return
+        openers++
+        updateBlockState()
+    }
+
+    override fun stopOpen(player: Player) {
+        if (player.isSpectator) return
+        openers = (openers - 1).coerceAtLeast(0)
+        updateBlockState()
+    }
+
     override fun loadAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
         super.loadAdditional(tag, registries)
         items = NonNullList.withSize(containerSize, ItemStack.EMPTY)
@@ -115,6 +130,7 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     private fun tickServer(level: Level, pos: BlockPos, state: BlockState) {
+        updateBlockState()
         pushOutputToAdjacentInventory(level, pos)
 
         if (items[SLOT_INPUT].isEmpty) {
@@ -261,6 +277,13 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         val owner = pcUpgradeOwner()
         val player = owner?.let { level.server?.playerList?.getPlayer(it) }
         if (player is ServerPlayer && CobbreedingCompat.hatchToPc(player, owner, egg)) {
+            val pokemonName = CobbreedingCompat.getSpeciesDisplayName(egg)
+            player.sendSystemMessage(
+                Component.translatable(
+                    "message.cobblemon_incubator.sent_to_pc",
+                    pokemonName
+                )
+            )
             items[SLOT_INPUT] = ItemStack.EMPTY
             updateBlockState()
             setChanged()
@@ -275,7 +298,13 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         }
     }
 
-    fun incubationSpeed(): Int = if (hasUpgrade(ModRegistries.SPEED_UPGRADE.get())) 10 else 5
+    fun incubationSpeed(): Int {
+        return if (hasUpgrade(ModRegistries.SPEED_UPGRADE.get())) {
+            IncubatorConfig.upgradedSpeed
+        } else {
+            IncubatorConfig.baseSpeed
+        }
+    }
 
     fun filterConfig(): FilterConfig? {
         for (slot in SLOT_UPGRADE_START..SLOT_UPGRADE_END) {
@@ -347,8 +376,17 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         val level = level ?: return
         val state = blockState
         val hasEgg = CobbreedingCompat.isEgg(items[SLOT_INPUT])
-        if (state.getValue(EggIncubatorBlock.HAS_EGG) != hasEgg) {
-            level.setBlock(worldPosition, state.setValue(EggIncubatorBlock.HAS_EGG, hasEgg), 3)
+        val open = openers > 0
+        if (state.getValue(EggIncubatorBlock.HAS_EGG) != hasEgg ||
+            state.getValue(EggIncubatorBlock.OPEN) != open
+        ) {
+            level.setBlock(
+                worldPosition,
+                state
+                    .setValue(EggIncubatorBlock.HAS_EGG, hasEgg)
+                    .setValue(EggIncubatorBlock.OPEN, open),
+                3
+            )
         }
     }
 }
