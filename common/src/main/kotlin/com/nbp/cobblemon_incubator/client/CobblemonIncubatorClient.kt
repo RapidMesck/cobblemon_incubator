@@ -7,8 +7,16 @@ import dev.architectury.registry.client.rendering.RenderTypeRegistry
 import net.minecraft.client.renderer.RenderType
 
 object CobblemonIncubatorClient {
-    fun init() {
+    fun registerScreen() {
         MenuRegistry.registerScreenFactory(ModRegistries.EGG_INCUBATOR_MENU.get(), ::EggIncubatorScreen)
+    }
+
+    fun registerRenderTypes() {
         RenderTypeRegistry.register(RenderType.translucent(), ModRegistries.EGG_INCUBATOR.get())
+    }
+
+    fun init() {
+        registerScreen()
+        registerRenderTypes()
     }
 }
