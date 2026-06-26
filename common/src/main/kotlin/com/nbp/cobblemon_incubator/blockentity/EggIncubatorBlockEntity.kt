@@ -38,7 +38,7 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         const val SLOT_UPGRADE_START = 2
         const val SLOT_UPGRADE_END = 4
         const val CONTAINER_SIZE = 5
-        const val DATA_COUNT = 4
+        const val DATA_COUNT = 8
 
         fun serverTick(level: Level, pos: BlockPos, state: BlockState, blockEntity: EggIncubatorBlockEntity) {
             blockEntity.tickServer(level, pos, state)
@@ -57,6 +57,10 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
                 1 -> cachedMaxTimer
                 2 -> incubationSpeed()
                 3 -> if (pcUpgradeOwner() != null) 1 else 0
+                4 -> IncubatorConfig.syncedDisplayMask
+                5 -> IncubatorConfig.syncedUpgradeMask
+                6 -> IncubatorConfig.syncedFilterMask
+                7 -> IncubatorConfig.syncedAutomationMask
                 else -> 0
             }
         }
@@ -131,9 +135,11 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
 
     private fun tickServer(level: Level, pos: BlockPos, state: BlockState) {
         updateBlockState()
-        pushOutputToAdjacentInventory(level, pos)
+        if (IncubatorConfig.autoOutputToInventories) {
+            pushOutputToAdjacentInventory(level, pos)
+        }
 
-        if (items[SLOT_INPUT].isEmpty) {
+        if (IncubatorConfig.autoInputFromPastures && items[SLOT_INPUT].isEmpty) {
             pullEggFromAdjacentPasture(level, pos)
         }
 
@@ -299,7 +305,7 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     fun incubationSpeed(): Int {
-        return if (hasUpgrade(ModRegistries.SPEED_UPGRADE.get())) {
+        return if (IncubatorConfig.speedUpgradeEnabled && hasUpgrade(ModRegistries.SPEED_UPGRADE.get())) {
             IncubatorConfig.upgradedSpeed
         } else {
             IncubatorConfig.baseSpeed
@@ -307,14 +313,18 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     fun filterConfig(): FilterConfig? {
+        if (!IncubatorConfig.filterUpgradeEnabled) return null
         for (slot in SLOT_UPGRADE_START..SLOT_UPGRADE_END) {
             val stack = items[slot]
-            if (stack.`is`(ModRegistries.FILTER_UPGRADE.get())) return FilterConfig.fromStack(stack)
+            if (stack.`is`(ModRegistries.FILTER_UPGRADE.get())) {
+                return FilterConfig.fromStack(stack).enabledOnly()
+            }
         }
         return null
     }
 
     fun pcUpgradeOwner(): UUID? {
+        if (!IncubatorConfig.pcUpgradeEnabled) return null
         for (slot in SLOT_UPGRADE_START..SLOT_UPGRADE_END) {
             val stack = items[slot]
             if (stack.`is`(ModRegistries.PC_UPGRADE.get())) {
@@ -333,9 +343,9 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     private fun isUpgrade(stack: ItemStack): Boolean {
-        return stack.`is`(ModRegistries.SPEED_UPGRADE.get()) ||
-            stack.`is`(ModRegistries.PC_UPGRADE.get()) ||
-            stack.`is`(ModRegistries.FILTER_UPGRADE.get())
+        return (IncubatorConfig.speedUpgradeEnabled && stack.`is`(ModRegistries.SPEED_UPGRADE.get())) ||
+            (IncubatorConfig.pcUpgradeEnabled && stack.`is`(ModRegistries.PC_UPGRADE.get())) ||
+            (IncubatorConfig.filterUpgradeEnabled && stack.`is`(ModRegistries.FILTER_UPGRADE.get()))
     }
 
     private fun passesFilter(egg: ItemStack): Boolean {

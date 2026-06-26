@@ -4,6 +4,7 @@
   "container.cobblemon_incubator.egg_incubator": "Incubadora de Ovo",
   "item.cobblemon_incubator.speed_upgrade": "Upgrade de Velocidade",
   "item.cobblemon_incubator.speed_upgrade.description": "Multiplica a velocidade da incubadora por %sx.",
+  "item.cobblemon_incubator.upgrade.disabled": "Este upgrade esta desativado na config do servidor.",
   "item.cobblemon_incubator.pc_upgrade": "Upgrade de PC",
   "item.cobblemon_incubator.pc_upgrade.description": "Envia Pokemon chocados diretamente ao PC vinculado.",
   "item.cobblemon_incubator.filter_upgrade": "Upgrade de Filtro",

@@ -15,6 +15,13 @@ class SpeedUpgradeItem(properties: Properties) : Item(properties) {
         tooltipFlag: TooltipFlag
     ) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag)
+        if (!IncubatorConfig.speedUpgradeEnabled) {
+            tooltipComponents.add(
+                Component.translatable("item.cobblemon_incubator.upgrade.disabled")
+                    .withStyle(ChatFormatting.RED)
+            )
+            return
+        }
         tooltipComponents.add(
             Component.translatable(
                 "item.cobblemon_incubator.speed_upgrade.description",

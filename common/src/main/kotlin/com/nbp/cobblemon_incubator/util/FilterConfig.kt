@@ -6,6 +6,7 @@ import com.cobblemon.mod.common.api.pokemon.PokemonProperties
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies
 import com.cobblemon.mod.common.api.pokemon.stats.Stat
 import com.cobblemon.mod.common.api.pokemon.stats.Stats
+import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import net.minecraft.world.item.ItemStack
 
@@ -77,6 +78,23 @@ data class FilterConfig(
 
     fun hasCriteria(): Boolean {
         return species != null || nature != null || ability != null || ivRules.isNotEmpty()
+    }
+
+    fun enabledOnly(): FilterConfig {
+        return copy(
+            species = species.takeIf { IncubatorConfig.speciesFilterEnabled },
+            nature = nature.takeIf { IncubatorConfig.natureFilterEnabled },
+            ability = ability.takeIf { IncubatorConfig.abilityFilterEnabled },
+            ivRules = if (IncubatorConfig.ivFilterEnabled) ivRules else emptyMap(),
+            rejectAction = if (
+                !IncubatorConfig.rejectActionFilterEnabled ||
+                (rejectAction == RejectAction.DELETE && !IncubatorConfig.deleteRejectedEggsEnabled)
+            ) {
+                RejectAction.OUTPUT
+            } else {
+                rejectAction
+            }
+        )
     }
 
     fun matches(properties: PokemonProperties): Boolean {

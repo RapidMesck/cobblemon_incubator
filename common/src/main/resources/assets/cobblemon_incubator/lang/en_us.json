@@ -4,6 +4,7 @@
   "container.cobblemon_incubator.egg_incubator": "Egg Incubator",
   "item.cobblemon_incubator.speed_upgrade": "Speed Upgrade",
   "item.cobblemon_incubator.speed_upgrade.description": "Multiplies the incubator speed by %sx.",
+  "item.cobblemon_incubator.upgrade.disabled": "This upgrade is disabled in the server config.",
   "item.cobblemon_incubator.pc_upgrade": "PC Upgrade",
   "item.cobblemon_incubator.pc_upgrade.description": "Sends hatched Pokemon directly to the linked PC.",
   "item.cobblemon_incubator.filter_upgrade": "Filter Upgrade",

@@ -1,5 +1,6 @@
 package com.nbp.cobblemon_incubator.item
 
+import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
@@ -14,12 +15,17 @@ import net.minecraft.world.level.Level
 class PcUpgradeItem(properties: Properties) : Item(properties) {
     override fun use(level: Level, player: Player, usedHand: InteractionHand): InteractionResultHolder<ItemStack> {
         val stack = player.getItemInHand(usedHand)
-        if (!level.isClientSide) {
-            stack.set(ModRegistries.PC_UPGRADE_OWNER_UUID.get(), player.uuid.toString())
-            stack.set(ModRegistries.PC_UPGRADE_OWNER_NAME.get(), player.gameProfile.name)
-            player.sendSystemMessage(Component.translatable("item.cobblemon_incubator.pc_upgrade.bound", player.gameProfile.name))
+        if (level.isClientSide) {
+            return InteractionResultHolder.sidedSuccess(stack, true)
         }
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide)
+        if (!IncubatorConfig.pcUpgradeEnabled) {
+            player.sendSystemMessage(Component.translatable("item.cobblemon_incubator.upgrade.disabled"))
+            return InteractionResultHolder.fail(stack)
+        }
+        stack.set(ModRegistries.PC_UPGRADE_OWNER_UUID.get(), player.uuid.toString())
+        stack.set(ModRegistries.PC_UPGRADE_OWNER_NAME.get(), player.gameProfile.name)
+        player.sendSystemMessage(Component.translatable("item.cobblemon_incubator.pc_upgrade.bound", player.gameProfile.name))
+        return InteractionResultHolder.sidedSuccess(stack, false)
     }
 
     override fun appendHoverText(
@@ -29,6 +35,13 @@ class PcUpgradeItem(properties: Properties) : Item(properties) {
         tooltipFlag: TooltipFlag
     ) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag)
+        if (!IncubatorConfig.pcUpgradeEnabled) {
+            tooltipComponents.add(
+                Component.translatable("item.cobblemon_incubator.upgrade.disabled")
+                    .withStyle(ChatFormatting.RED)
+            )
+            return
+        }
         tooltipComponents.add(
             Component.translatable("item.cobblemon_incubator.pc_upgrade.description")
                 .withStyle(ChatFormatting.GRAY)
