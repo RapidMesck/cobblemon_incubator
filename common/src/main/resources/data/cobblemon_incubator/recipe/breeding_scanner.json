@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["GG ", "GE ", "II "],
+  "key": {
+    "G": {
+      "item": "minecraft:glass_pane"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "E": {
+      "item": "cobblemon:electirizer"
+    }
+  },
+  "result": {
+    "id": "cobblemon_incubator:breeding_scanner"
+  }
+}
