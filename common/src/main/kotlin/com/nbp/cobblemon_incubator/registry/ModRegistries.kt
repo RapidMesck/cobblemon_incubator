@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec
 import com.nbp.cobblemon_incubator.CobblemonIncubator
 import com.nbp.cobblemon_incubator.block.EggIncubatorBlock
 import com.nbp.cobblemon_incubator.blockentity.EggIncubatorBlockEntity
+import com.nbp.cobblemon_incubator.item.BreedingScannerItem
 import com.nbp.cobblemon_incubator.item.FilterUpgradeItem
 import com.nbp.cobblemon_incubator.item.PcUpgradeItem
 import com.nbp.cobblemon_incubator.item.SpeedUpgradeItem
@@ -61,6 +62,10 @@ object ModRegistries {
         FilterUpgradeItem(Item.Properties().stacksTo(1))
     }
 
+    val BREEDING_SCANNER: RegistrySupplier<Item> = ITEMS.register("breeding_scanner") {
+        BreedingScannerItem(Item.Properties().stacksTo(1))
+    }
+
     val CREATIVE_TAB: RegistrySupplier<CreativeModeTab> = CREATIVE_MODE_TABS.register("main") {
         CreativeTabRegistry.create { builder ->
             builder
@@ -71,6 +76,7 @@ object ModRegistries {
                     output.accept(SPEED_UPGRADE.get())
                     output.accept(PC_UPGRADE.get())
                     output.accept(FILTER_UPGRADE.get())
+                    output.accept(BREEDING_SCANNER.get())
                 }
         }
     }
