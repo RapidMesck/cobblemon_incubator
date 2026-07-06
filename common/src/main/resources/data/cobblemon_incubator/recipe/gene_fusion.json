@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GCG",
+    "CEC",
+    "III"
+  ],
+  "key": {
+    "G": { "item": "minecraft:glass" },
+    "C": { "item": "minecraft:copper_ingot" },
+    "E": { "item": "cobblemon:up-grade" },
+    "I": { "item": "minecraft:iron_ingot" }
+  },
+  "result": {
+    "id": "cobblemon_incubator:gene_fusion",
+    "count": 1
+  }
+}

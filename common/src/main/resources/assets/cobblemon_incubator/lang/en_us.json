@@ -36,5 +36,12 @@
   "tooltip.cobblemon_incubator.nature": "Nature: %s",
   "tooltip.cobblemon_incubator.ability": "Ability: %s",
   "tooltip.cobblemon_incubator.ivs": "IVs: HP %s | Atk %s | Def %s | SpA %s | SpD %s | Spe %s",
-  "tooltip.cobblemon_incubator.ivs_unknown": "Unknown IVs"
+  "tooltip.cobblemon_incubator.ivs_unknown": "Unknown IVs",
+  "block.cobblemon_incubator.gene_fusion": "Gene Fusion Machine",
+  "container.cobblemon_incubator.gene_fusion": "Gene Fusion",
+  "item.cobblemon_incubator.stem_cell_syringe": "Stem Cell Syringe",
+  "item.cobblemon_incubator.stem_cell_syringe.description": "Absorbs cells from defeated wild Pokemon. Used to power the Gene Fusion Machine.",
+  "item.cobblemon_incubator.stem_cell_syringe.charge": "Charge: %s / %s",
+  "gui.cobblemon_incubator.gene_fusion.fuse": "Fuse",
+  "gui.cobblemon_incubator.gene_fusion.fuse.tooltip": "Combine eggs into a single egg with the best stats"
 }

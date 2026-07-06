@@ -3,12 +3,16 @@ package com.nbp.cobblemon_incubator.registry
 import com.mojang.serialization.Codec
 import com.nbp.cobblemon_incubator.CobblemonIncubator
 import com.nbp.cobblemon_incubator.block.EggIncubatorBlock
+import com.nbp.cobblemon_incubator.block.GeneFusionBlock
 import com.nbp.cobblemon_incubator.blockentity.EggIncubatorBlockEntity
+import com.nbp.cobblemon_incubator.blockentity.GeneFusionBlockEntity
 import com.nbp.cobblemon_incubator.item.BreedingScannerItem
 import com.nbp.cobblemon_incubator.item.FilterUpgradeItem
 import com.nbp.cobblemon_incubator.item.PcUpgradeItem
 import com.nbp.cobblemon_incubator.item.SpeedUpgradeItem
+import com.nbp.cobblemon_incubator.item.StemCellSyringeItem
 import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
+import com.nbp.cobblemon_incubator.menu.GeneFusionMenu
 import dev.architectury.registry.CreativeTabRegistry
 import dev.architectury.registry.menu.MenuRegistry
 import dev.architectury.registry.registries.DeferredRegister
@@ -66,6 +70,23 @@ object ModRegistries {
         BreedingScannerItem(Item.Properties().stacksTo(1))
     }
 
+    val STEM_CELL_SYRINGE: RegistrySupplier<Item> = ITEMS.register("stem_cell_syringe") {
+        StemCellSyringeItem(Item.Properties().stacksTo(1))
+    }
+
+    val GENE_FUSION: RegistrySupplier<GeneFusionBlock> = BLOCKS.register("gene_fusion") {
+        GeneFusionBlock(
+            BlockBehaviour.Properties.of()
+                .strength(3.5f, 6.0f)
+                .sound(SoundType.COPPER)
+                .noOcclusion()
+        )
+    }
+
+    val GENE_FUSION_ITEM: RegistrySupplier<Item> = ITEMS.register("gene_fusion") {
+        BlockItem(GENE_FUSION.get(), Item.Properties())
+    }
+
     val CREATIVE_TAB: RegistrySupplier<CreativeModeTab> = CREATIVE_MODE_TABS.register("main") {
         CreativeTabRegistry.create { builder ->
             builder
@@ -73,10 +94,12 @@ object ModRegistries {
                 .icon { ItemStack(EGG_INCUBATOR_ITEM.get()) }
                 .displayItems { _, output ->
                     output.accept(EGG_INCUBATOR_ITEM.get())
+                    output.accept(GENE_FUSION_ITEM.get())
                     output.accept(SPEED_UPGRADE.get())
                     output.accept(PC_UPGRADE.get())
                     output.accept(FILTER_UPGRADE.get())
                     output.accept(BREEDING_SCANNER.get())
+                    output.accept(STEM_CELL_SYRINGE.get())
                 }
         }
     }
@@ -93,6 +116,10 @@ object ModRegistries {
         DataComponentType.builder<String>().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8).build()
     }
 
+    val SYRINGE_CHARGE: RegistrySupplier<DataComponentType<Int>> = DATA_COMPONENT_TYPES.register("syringe_charge") {
+        DataComponentType.builder<Int>().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT).build()
+    }
+
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     val EGG_INCUBATOR_BLOCK_ENTITY: RegistrySupplier<BlockEntityType<EggIncubatorBlockEntity>> =
         BLOCK_ENTITY_TYPES.register("egg_incubator") {
@@ -101,6 +128,16 @@ object ModRegistries {
 
     val EGG_INCUBATOR_MENU: RegistrySupplier<MenuType<EggIncubatorMenu>> = MENU_TYPES.register("egg_incubator") {
         MenuRegistry.ofExtended(::EggIncubatorMenu)
+    }
+
+    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+    val GENE_FUSION_BLOCK_ENTITY: RegistrySupplier<BlockEntityType<GeneFusionBlockEntity>> =
+        BLOCK_ENTITY_TYPES.register("gene_fusion") {
+            BlockEntityType.Builder.of(::GeneFusionBlockEntity, GENE_FUSION.get()).build(null)
+        }
+
+    val GENE_FUSION_MENU: RegistrySupplier<MenuType<GeneFusionMenu>> = MENU_TYPES.register("gene_fusion") {
+        MenuRegistry.ofExtended(::GeneFusionMenu)
     }
 
     fun register() {

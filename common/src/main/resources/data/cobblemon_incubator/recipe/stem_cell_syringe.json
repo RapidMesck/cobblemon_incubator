@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " G ",
+    "ISI",
+    " I "
+  ],
+  "key": {
+    "G": { "item": "minecraft:glass_pane" },
+    "I": { "item": "minecraft:iron_ingot" },
+    "S": { "item": "cobblemon:rare_candy" }
+  },
+  "result": {
+    "id": "cobblemon_incubator:stem_cell_syringe",
+    "count": 1
+  }
+}

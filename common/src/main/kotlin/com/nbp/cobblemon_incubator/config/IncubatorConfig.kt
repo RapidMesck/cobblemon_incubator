@@ -35,7 +35,8 @@ object IncubatorConfig {
         var display: DisplayOptions? = DisplayOptions(),
         var upgrades: UpgradeOptions? = UpgradeOptions(),
         var filters: FilterOptions? = FilterOptions(),
-        var automation: AutomationOptions? = AutomationOptions()
+        var automation: AutomationOptions? = AutomationOptions(),
+        var geneFusion: GeneFusionOptions? = GeneFusionOptions()
     )
 
     private data class DisplayOptions(
@@ -64,6 +65,12 @@ object IncubatorConfig {
     private data class AutomationOptions(
         var autoInputFromPastures: Boolean = true,
         var autoOutputToInventories: Boolean = true
+    )
+
+    private data class GeneFusionOptions(
+        var costMultiplier: Double = 1.0,
+        var chargePerLevel: Int = 10,
+        var syringeMaxCharge: Int = 500
     )
 
     private var values = Values()
@@ -125,6 +132,15 @@ object IncubatorConfig {
     val autoOutputToInventories: Boolean
         get() = values.automation?.autoOutputToInventories ?: true
 
+    val geneFusionCostMultiplier: Double
+        get() = values.geneFusion?.costMultiplier ?: 1.0
+
+    val geneFusionChargePerLevel: Int
+        get() = values.geneFusion?.chargePerLevel ?: 10
+
+    val geneFusionSyringeMaxCharge: Int
+        get() = values.geneFusion?.syringeMaxCharge ?: 500
+
     val displayMask: Int
         get() = maskOf(
             DISPLAY_MODEL to displayPokemonModel,
@@ -174,14 +190,17 @@ object IncubatorConfig {
         values = read(path).sanitize()
         write(path, values)
         CobblemonIncubator.logger.info(
-            "Loaded incubator config: baseSpeed={}, speedUpgradeMultiplier={}, upgradedSpeed={}, displayMask={}, upgradeMask={}, filterMask={}, automationMask={}",
+            "Loaded incubator config: baseSpeed={}, speedUpgradeMultiplier={}, upgradedSpeed={}, displayMask={}, upgradeMask={}, filterMask={}, automationMask={}, geneFusion(costMultiplier={}, chargePerLevel={}, syringeMaxCharge={})",
             baseSpeed,
             speedUpgradeMultiplier,
             upgradedSpeed,
             displayMask,
             upgradeMask,
             filterMask,
-            automationMask
+            automationMask,
+            geneFusionCostMultiplier,
+            geneFusionChargePerLevel,
+            geneFusionSyringeMaxCharge
         )
     }
 
@@ -223,6 +242,13 @@ object IncubatorConfig {
         upgrades = upgrades ?: UpgradeOptions()
         filters = filters ?: FilterOptions()
         automation = automation ?: AutomationOptions()
+        geneFusion = geneFusion ?: GeneFusionOptions()
+        geneFusion?.costMultiplier = geneFusion!!.costMultiplier
+            .takeIf { it.isFinite() }
+            ?.coerceIn(0.01, 1000.0)
+            ?: 1.0
+        geneFusion?.chargePerLevel = geneFusion!!.chargePerLevel.coerceIn(1, 1000)
+        geneFusion?.syringeMaxCharge = geneFusion!!.syringeMaxCharge.coerceIn(1, 100000)
         return this
     }
 

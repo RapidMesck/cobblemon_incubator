@@ -36,5 +36,12 @@
   "tooltip.cobblemon_incubator.nature": "Nature: %s",
   "tooltip.cobblemon_incubator.ability": "Ability: %s",
   "tooltip.cobblemon_incubator.ivs": "IVs: HP %s | Atk %s | Def %s | SpA %s | SpD %s | Spe %s",
-  "tooltip.cobblemon_incubator.ivs_unknown": "IVs desconhecidos"
+  "tooltip.cobblemon_incubator.ivs_unknown": "IVs desconhecidos",
+  "block.cobblemon_incubator.gene_fusion": "Maquina de Fusao Genetica",
+  "container.cobblemon_incubator.gene_fusion": "Fusao Genetica",
+  "item.cobblemon_incubator.stem_cell_syringe": "Seringa de Celulas Tronco",
+  "item.cobblemon_incubator.stem_cell_syringe.description": "Absorve celulas de Pokemon selvagens derrotados. Usada para alimentar a Maquina de Fusao Genetica.",
+  "item.cobblemon_incubator.stem_cell_syringe.charge": "Carga: %s / %s",
+  "gui.cobblemon_incubator.gene_fusion.fuse": "Fundir",
+  "gui.cobblemon_incubator.gene_fusion.fuse.tooltip": "Combina ovos em um unico ovo com os melhores stats"
 }

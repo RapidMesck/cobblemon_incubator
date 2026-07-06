@@ -33,6 +33,18 @@ object CobbreedingCompat {
         }.getOrNull()
     }
 
+    private val createEggMethod: Method? by lazy {
+        runCatching {
+            Class.forName("ludichat.cobbreeding.EggUtilities")
+                .methods
+                .firstOrNull { method ->
+                    method.name == "getEggFromPokemonProperties" &&
+                        method.parameterTypes.size >= 1 &&
+                        PokemonProperties::class.java.isAssignableFrom(method.parameterTypes[0])
+                }
+        }.getOrNull()
+    }
+
     fun isEgg(stack: ItemStack): Boolean {
         if (stack.isEmpty) return false
         return extractProperties(stack) != null || BuiltInRegistries.ITEM.getKey(stack.item).namespace == "cobbreeding"
@@ -159,5 +171,13 @@ object CobbreedingCompat {
             if (ivs != null) add("IVs: $ivs")
             properties.moves?.takeIf { it.isNotEmpty() }?.let { add("Moves: ${it.joinToString()}") }
         }
+    }
+
+    fun createFusedEgg(properties: PokemonProperties, timer: Int): ItemStack? {
+        return runCatching {
+            createEggMethod?.invoke(null, properties, timer as Int?) as? ItemStack
+        }.onFailure {
+            CobblemonIncubator.logger.error("Falha ao criar ovo fusionado via Cobbreeding", it)
+        }.getOrNull()
     }
 }
