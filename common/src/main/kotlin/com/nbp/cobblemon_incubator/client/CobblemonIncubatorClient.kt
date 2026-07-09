@@ -12,7 +12,7 @@ object CobblemonIncubatorClient {
     }
 
     fun registerRenderTypes() {
-        RenderTypeRegistry.register(RenderType.translucent(), ModRegistries.EGG_INCUBATOR.get())
+        RenderTypeRegistry.register(RenderType.cutout(), ModRegistries.EGG_INCUBATOR.get())
     }
 
     fun init() {
