@@ -1,7 +1,6 @@
 package com.nbp.cobblemon_incubator.menu
 
 import com.nbp.cobblemon_incubator.blockentity.GeneFusionBlockEntity
-import com.nbp.cobblemon_incubator.item.StemCellSyringeItem
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import com.nbp.cobblemon_incubator.util.CobbreedingCompat
 import net.minecraft.core.BlockPos
@@ -45,26 +44,26 @@ class GeneFusionMenu : AbstractContainerMenu {
         checkContainerSize(container, GeneFusionBlockEntity.CONTAINER_SIZE)
         container.startOpen(playerInventory.player)
 
-        val mainX = 84
-
-        for (row in 0..1) {
-            for (col in 0..2) {
-                val slotIndex = col + row * 3
-                addSlot(EggSlot(container, GeneFusionBlockEntity.SLOT_EGG_START + slotIndex, mainX + col * 18, 27 + row * 18))
-            }
-        }
-
-        addSlot(OutputSlot(container, GeneFusionBlockEntity.SLOT_OUTPUT, mainX + 80, 45))
-        addSlot(SyringeSlot(container, GeneFusionBlockEntity.SLOT_SYRINGE, mainX + 80, 82))
-
+        val eggCols = intArrayOf(61, 82)
+        val eggRows = intArrayOf(45, 66, 87)
         for (row in 0..2) {
-            for (column in 0..8) {
-                addSlot(Slot(playerInventory, column + row * 9 + 9, mainX + column * 18, 122 + row * 18))
+            for (col in 0..1) {
+                val index = GeneFusionBlockEntity.SLOT_EGG_START + col + row * 2
+                addSlot(EggSlot(container, index, eggCols[col], eggRows[row]))
             }
         }
 
-        for (column in 0..8) {
-            addSlot(Slot(playerInventory, column, mainX + column * 18, 180))
+        addSlot(OutputSlot(container, GeneFusionBlockEntity.SLOT_OUTPUT, 180, 45))
+        addSlot(SyringeSlot(container, GeneFusionBlockEntity.SLOT_SYRINGE, 180, 87))
+
+        val mainX = 54
+        for (row in 0..2) {
+            for (col in 0..8) {
+                addSlot(Slot(playerInventory, col + row * 9 + 9, mainX + col * 18, 122 + row * 18))
+            }
+        }
+        for (col in 0..8) {
+            addSlot(Slot(playerInventory, col, mainX + col * 18, 180))
         }
 
         addDataSlots(data)
@@ -76,16 +75,21 @@ class GeneFusionMenu : AbstractContainerMenu {
     val requiredCharge: Int get() = data.get(3)
     val fusionStatus: Int get() = data.get(4)
     val eggCount: Int get() = data.get(5)
-    val canFuse: Boolean get() = fusionStatus == 1
 
-    fun getBlockEntity(): GeneFusionBlockEntity? {
-        return container as? GeneFusionBlockEntity
-    }
+    private fun eggItems(): List<ItemStack> =
+        (GeneFusionBlockEntity.SLOT_EGG_START..GeneFusionBlockEntity.SLOT_EGG_END).map { container.getItem(it) }
+
+    fun availableNatures(): List<String> = GeneFusionBlockEntity.natureOptions(eggItems())
+    fun availableAbilities(): List<String> = GeneFusionBlockEntity.abilityOptions(eggItems())
+    fun previewIvs() = GeneFusionBlockEntity.bestIvs(eggItems())
+
+    fun getSelectedNature(): String = availableNatures().getOrNull(selectedNatureIndex) ?: ""
+    fun getSelectedAbility(): String = availableAbilities().getOrNull(selectedAbilityIndex) ?: ""
 
     override fun stillValid(player: Player): Boolean = container.stillValid(player)
 
     override fun clickMenuButton(player: Player, id: Int): Boolean {
-        val be = getBlockEntity() ?: return false
+        val be = container as? GeneFusionBlockEntity ?: return false
         return when (id) {
             0 -> {
                 val natures = be.availableNatures()
@@ -95,6 +99,7 @@ class GeneFusionMenu : AbstractContainerMenu {
                 be.selectNature(natures[Math.floorMod(idx + 1, natures.size)])
                 true
             }
+
             1 -> {
                 val natures = be.availableNatures()
                 if (natures.isEmpty()) return false
@@ -103,6 +108,7 @@ class GeneFusionMenu : AbstractContainerMenu {
                 be.selectNature(natures[Math.floorMod(idx - 1, natures.size)])
                 true
             }
+
             2 -> {
                 val abilities = be.availableAbilities()
                 if (abilities.isEmpty()) return false
@@ -111,6 +117,7 @@ class GeneFusionMenu : AbstractContainerMenu {
                 be.selectAbility(abilities[Math.floorMod(idx + 1, abilities.size)])
                 true
             }
+
             3 -> {
                 val abilities = be.availableAbilities()
                 if (abilities.isEmpty()) return false
@@ -119,10 +126,12 @@ class GeneFusionMenu : AbstractContainerMenu {
                 be.selectAbility(abilities[Math.floorMod(idx - 1, abilities.size)])
                 true
             }
+
             4 -> {
                 be.performFusion()
                 true
             }
+
             else -> false
         }
     }
@@ -139,11 +148,23 @@ class GeneFusionMenu : AbstractContainerMenu {
         if (index < containerSlots) {
             if (!moveItemStackTo(stack, containerSlots, slots.size, true)) return ItemStack.EMPTY
         } else if (CobbreedingCompat.isEgg(stack)) {
-            if (!moveItemStackTo(stack, GeneFusionBlockEntity.SLOT_EGG_START, GeneFusionBlockEntity.SLOT_EGG_END + 1, false)) {
+            if (!moveItemStackTo(
+                    stack,
+                    GeneFusionBlockEntity.SLOT_EGG_START,
+                    GeneFusionBlockEntity.SLOT_EGG_END + 1,
+                    false
+                )
+            ) {
                 return ItemStack.EMPTY
             }
         } else if (stack.`is`(ModRegistries.STEM_CELL_SYRINGE.get())) {
-            if (!moveItemStackTo(stack, GeneFusionBlockEntity.SLOT_SYRINGE, GeneFusionBlockEntity.SLOT_SYRINGE + 1, false)) {
+            if (!moveItemStackTo(
+                    stack,
+                    GeneFusionBlockEntity.SLOT_SYRINGE,
+                    GeneFusionBlockEntity.SLOT_SYRINGE + 1,
+                    false
+                )
+            ) {
                 return ItemStack.EMPTY
             }
         } else {
@@ -159,8 +180,22 @@ class GeneFusionMenu : AbstractContainerMenu {
         container.stopOpen(player)
     }
 
-    private class EggSlot(container: Container, slot: Int, x: Int, y: Int) : Slot(container, slot, x, y) {
-        override fun mayPlace(stack: ItemStack): Boolean = CobbreedingCompat.isEgg(stack)
+    private class EggSlot(container: Container, index: Int, x: Int, y: Int) : Slot(container, index, x, y) {
+        override fun mayPlace(stack: ItemStack): Boolean {
+            if (!CobbreedingCompat.isEgg(stack)) return false
+
+            val newSpecies = CobbreedingCompat.extractProperties(stack)?.species ?: return false
+
+            for (i in GeneFusionBlockEntity.SLOT_EGG_START..GeneFusionBlockEntity.SLOT_EGG_END) {
+                if (i == index) continue
+                val existing = container.getItem(i)
+                if (existing.isEmpty) continue
+                val existingSpecies = CobbreedingCompat.extractProperties(existing)?.species
+                if (existingSpecies != null && existingSpecies != newSpecies) return false
+            }
+
+            return true
+        }
     }
 
     private class OutputSlot(container: Container, slot: Int, x: Int, y: Int) : Slot(container, slot, x, y) {

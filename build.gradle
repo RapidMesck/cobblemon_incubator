@@ -65,3 +65,38 @@ subprojects {
         }
     }
 }
+
+// Task to download Cobbreeding dependency jars for development
+tasks.register("downloadCobbreeding") {
+    group = "setup"
+    description = "Downloads Cobbreeding mod jars for development"
+
+    def fabricLibsDir = file("fabric/libs")
+    def neoforgeLibsDir = file("neoforge/libs")
+
+    def fabricJar = file("fabric/libs/Cobbreeding-fabric-2.2.2.jar")
+    def neoforgeJar = file("neoforge/libs/Cobbreeding-neoforge-2.2.2.jar")
+
+    outputs.files(fabricJar, neoforgeJar)
+
+    doLast {
+        fabricLibsDir.mkdirs()
+        neoforgeLibsDir.mkdirs()
+
+        if (!fabricJar.exists()) {
+            logger.lifecycle("Downloading Cobbreeding Fabric 2.2.2...")
+            ant.get(
+                src: "https://cdn.modrinth.com/data/ItmVb4zY/versions/RNbPHodv/Cobbreeding-fabric-2.2.2.jar",
+                dest: fabricJar
+            )
+        }
+
+        if (!neoforgeJar.exists()) {
+            logger.lifecycle("Downloading Cobbreeding NeoForge 2.2.2...")
+            ant.get(
+                src: "https://cdn.modrinth.com/data/ItmVb4zY/versions/9bPk2DC3/Cobbreeding-neoforge-2.2.2.jar",
+                dest: neoforgeJar
+            )
+        }
+    }
+}

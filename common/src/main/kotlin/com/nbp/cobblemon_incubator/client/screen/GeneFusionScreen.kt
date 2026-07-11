@@ -1,10 +1,13 @@
 package com.nbp.cobblemon_incubator.client.screen
 
 import com.cobblemon.mod.common.api.gui.blitk
+import com.cobblemon.mod.common.api.pokemon.PokemonProperties
+import com.cobblemon.mod.common.api.pokemon.PokemonSpecies
 import com.cobblemon.mod.common.api.pokemon.stats.Stat
 import com.cobblemon.mod.common.api.pokemon.stats.Stats
-import com.cobblemon.mod.common.client.CobblemonResources
 import com.cobblemon.mod.common.CobblemonSounds
+import com.cobblemon.mod.common.client.CobblemonResources
+import com.cobblemon.mod.common.client.gui.summary.widgets.ModelWidget
 import com.cobblemon.mod.common.util.cobblemonResource
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.vertex.BufferUploader
@@ -12,7 +15,11 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat
 import com.mojang.blaze3d.vertex.Tesselator
 import com.mojang.blaze3d.vertex.VertexFormat
 import com.nbp.cobblemon_incubator.CobblemonIncubator
+import com.nbp.cobblemon_incubator.blockentity.GeneFusionBlockEntity
+import com.nbp.cobblemon_incubator.item.StemCellSyringeItem
 import com.nbp.cobblemon_incubator.menu.GeneFusionMenu
+import com.nbp.cobblemon_incubator.registry.ModRegistries
+import com.nbp.cobblemon_incubator.util.CobbreedingCompat
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.Button
@@ -29,11 +36,14 @@ import kotlin.math.roundToInt
 class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Component) :
     AbstractContainerScreen<GeneFusionMenu>(menu, inventory, title) {
 
-    private lateinit var naturePrevButton: PcTextButton
-    private lateinit var natureNextButton: PcTextButton
-    private lateinit var abilityPrevButton: PcTextButton
-    private lateinit var abilityNextButton: PcTextButton
+    private lateinit var naturePrevButton: ArrowButton
+    private lateinit var natureNextButton: ArrowButton
+    private lateinit var abilityPrevButton: ArrowButton
+    private lateinit var abilityNextButton: ArrowButton
     private lateinit var fuseButton: PcTextButton
+
+    private var modelWidget: ModelWidget? = null
+    private var modelKey: String? = null
 
     private val chartStats: List<Pair<String, Stat>> = listOf(
         "HP" to Stats.HP,
@@ -45,33 +55,57 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
     )
 
     init {
-        imageWidth = BASE_WIDTH
-        imageHeight = BASE_HEIGHT
-        inventoryLabelX = 85
-        inventoryLabelY = 111
-        titleLabelX = 14
+        imageWidth = TEXTURE_WIDTH
+        imageHeight = TEXTURE_HEIGHT
+        inventoryLabelX = 54
+        inventoryLabelY = 110
+        titleLabelX = 135
         titleLabelY = 12
     }
 
     override fun init() {
         super.init()
-        val rightX = leftPos + 230
 
-        naturePrevButton = addButton(rightX, topPos + 30, 14, 14, "<") {
-            Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, 1)
-        }
-        natureNextButton = addButton(rightX + 55, topPos + 30, 14, 14, ">") {
-            Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, 0)
-        }
-        abilityPrevButton = addButton(rightX, topPos + 50, 14, 14, "<") {
-            Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, 3)
-        }
-        abilityNextButton = addButton(rightX + 55, topPos + 50, 14, 14, ">") {
-            Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, 2)
-        }
-        fuseButton = addFuseButton(rightX, topPos + 75, 69, 20) {
-            Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, 4)
-        }
+        val bgX = leftPos - X_OFFSET
+        naturePrevButton =
+            ArrowButton(bgX + NATURE_ARROW_X, topPos + NATURE_ARROW_Y, 11, 12, Component.literal("<"), Button.OnPress {
+                Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, 1)
+            }).also { addRenderableWidget(it) }
+        natureNextButton = ArrowButton(
+            bgX + NATURE_ARROW_RIGHT_X,
+            topPos + NATURE_ARROW_Y,
+            11,
+            12,
+            Component.literal(">"),
+            Button.OnPress {
+                Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, 0)
+            }).also { addRenderableWidget(it) }
+        abilityPrevButton = ArrowButton(
+            bgX + ABILITY_ARROW_X,
+            topPos + ABILITY_ARROW_Y,
+            11,
+            12,
+            Component.literal("<"),
+            Button.OnPress {
+                Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, 3)
+            }).also { addRenderableWidget(it) }
+        abilityNextButton = ArrowButton(
+            bgX + ABILITY_ARROW_RIGHT_X,
+            topPos + ABILITY_ARROW_Y,
+            11,
+            12,
+            Component.literal(">"),
+            Button.OnPress {
+                Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, 2)
+            }).also { addRenderableWidget(it) }
+
+        fuseButton = PcTextButton(
+            bgX + FUSE_BUTTON_X, topPos + FUSE_BUTTON_Y, FUSE_BUTTON_WIDTH, FUSE_BUTTON_HEIGHT,
+            Component.translatable("gui.cobblemon_incubator.gene_fusion.fuse"),
+            Button.OnPress {
+                Minecraft.getInstance().gameMode?.handleInventoryButtonClick(menu.containerId, 4)
+            }
+        ).also { addRenderableWidget(it) }
     }
 
     override fun render(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
@@ -79,132 +113,310 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
         super.render(guiGraphics, mouseX, mouseY, partialTick)
         renderTooltip(guiGraphics, mouseX, mouseY)
 
-        fuseButton.active = menu.canFuse
+        val canFuse = menu.fusionStatus == 1
+        fuseButton.visible = canFuse
+        fuseButton.active = canFuse
+
+        val hasEgg = menu.eggCount >= 1
+        naturePrevButton.visible = hasEgg
+        natureNextButton.visible = hasEgg
+        abilityPrevButton.visible = hasEgg
+        abilityNextButton.visible = hasEgg
     }
 
     override fun renderBg(guiGraphics: GuiGraphics, partialTick: Float, mouseX: Int, mouseY: Int) {
-        val left = leftPos
-        val top = topPos
+        val properties = eggProperties()
+        updateModelWidget(properties)
+
+        val bgX = leftPos - X_OFFSET
+        val bgY = topPos
 
         blitk(
             matrixStack = guiGraphics.pose(),
             texture = backgroundResource,
-            x = left,
-            y = top,
-            width = BASE_WIDTH,
-            height = BASE_HEIGHT
+            x = bgX,
+            y = bgY,
+            width = TEXTURE_WIDTH,
+            height = TEXTURE_HEIGHT,
+            textureWidth = TEXTURE_WIDTH,
+            textureHeight = TEXTURE_HEIGHT
         )
-
-        if (menu.eggCount >= 2) {
-            renderIvChart(guiGraphics, left, top)
-        }
-
-        val charge = menu.syringeCharge
-        val required = menu.requiredCharge
-        if (required > 0) {
-            renderChargeBar(guiGraphics, left + 230, top + 100, 69, 6, charge, required)
-        }
-
-        val be = menu.getBlockEntity() ?: return
-        val selectedNature = be.getSelectedNature()
-        val selectedAbility = be.getSelectedAbility()
-
-        drawTinyText(guiGraphics, Component.literal("Nature"), left + 230f, top + 18f, colour = 0xA0A0A0)
-        drawSmallText(
-            guiGraphics,
-            Component.literal(if (selectedNature.isNotBlank()) displayName(selectedNature) else "None"),
-            left + 230f, top + 48f, colour = if (selectedNature.isNotBlank()) 0xFFFFFF else 0x888888
-        )
-
-        drawTinyText(guiGraphics, Component.literal("Ability"), left + 230f, top + 37f, colour = 0xA0A0A0)
-        drawSmallText(
-            guiGraphics,
-            Component.literal(if (selectedAbility.isNotBlank()) displayName(selectedAbility) else "None"),
-            left + 230f, top + 67f, colour = if (selectedAbility.isNotBlank()) 0xFFFFFF else 0x888888
-        )
-    }
-
-    override fun renderLabels(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
-        drawPcText(guiGraphics, title, 14F, 12F, shadow = true)
-        drawPcText(guiGraphics, playerInventoryTitle, 168F, 111F, centred = true, shadow = true)
-    }
-
-    private fun renderIvChart(guiGraphics: GuiGraphics, left: Int, top: Int) {
-        val centerX = left + 44f
-        val centerY = top + 65f
-        val scale = 0.22f
 
         blitk(
             matrixStack = guiGraphics.pose(),
+            texture = portraitBackgroundResource,
+            x = bgX + PORTRAIT_X,
+            y = bgY + PORTRAIT_Y,
+            width = PORTRAIT_SIZE,
+            height = PORTRAIT_SIZE
+        )
+
+        modelWidget?.render(guiGraphics, mouseX, mouseY, partialTick)
+
+        renderDnaProgress(guiGraphics)
+    }
+
+    override fun renderLabels(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
+        drawPcText(guiGraphics, title, titleLabelX.toFloat(), titleLabelY.toFloat(), centered = true, shadow = true)
+        drawPcText(guiGraphics, playerInventoryTitle, 133F, 111F, centered = true, shadow = true)
+
+        renderChargeInfo(guiGraphics)
+
+        val properties = eggProperties()
+        if (properties == null) {
+            drawPcText(guiGraphics, Component.literal("No Egg"), -33F, 12F, shadow = true)
+        } else {
+            drawPcText(guiGraphics, Component.literal(displayName(properties.species)), -33F, 12F, shadow = true)
+        }
+
+        renderSelectors(guiGraphics)
+
+        val previewIvs = menu.previewIvs()
+        if (previewIvs != null) {
+            renderIvChart(guiGraphics, previewIvs)
+        } else if (eggProperties() != null) {
+            drawPcText(
+                guiGraphics,
+                Component.literal("IVs unknown"),
+                IV_CHART_CENTER_X,
+                IV_CHART_CENTER_Y + 18F,
+                centered = true,
+                colour = 0xB8B8B8
+            )
+        }
+    }
+
+    private fun renderSelectors(guiGraphics: GuiGraphics) {
+        if (menu.eggCount < 1) return
+
+        val selectedNature = menu.getSelectedNature()
+        val natureText = if (selectedNature.isNotEmpty()) displayName(selectedNature) else "Any"
+        val natureColor =
+            if (selectedNature.isNotEmpty() && menu.availableNatures().isNotEmpty()) 0xFFFFFF else 0xB8B8B8
+
+        val selectedAbility = menu.getSelectedAbility()
+        val abilityText = if (selectedAbility.isNotEmpty()) displayName(selectedAbility) else "Any"
+        val abilityColor =
+            if (selectedAbility.isNotEmpty() && menu.availableAbilities().isNotEmpty()) 0xFFFFFF else 0xB8B8B8
+
+        drawSmallText(guiGraphics, Component.literal("Nature"), NATURE_TEXT_X, NATURE_LABEL_Y, centered = true)
+        drawSmallText(
+            guiGraphics,
+            Component.literal(natureText.fit(13)),
+            NATURE_TEXT_X,
+            NATURE_VALUE_Y,
+            centered = true,
+            colour = natureColor
+        )
+
+        drawSmallText(guiGraphics, Component.literal("Ability"), ABILITY_TEXT_X, ABILITY_LABEL_Y, centered = true)
+        drawSmallText(
+            guiGraphics,
+            Component.literal(abilityText.fit(13)),
+            ABILITY_TEXT_X,
+            ABILITY_VALUE_Y,
+            centered = true,
+            colour = abilityColor
+        )
+    }
+
+    private fun renderDnaProgress(guiGraphics: GuiGraphics) {
+        val required = menu.requiredCharge
+        if (required <= 0) return
+
+        val charge = menu.syringeCharge
+        val progress = (charge.toFloat() / required).coerceIn(0F, 1F)
+        val frame = (progress * (DNA_FRAMES - 1)).roundToInt()
+        val bgX = leftPos - X_OFFSET
+
+        blitk(
+            matrixStack = guiGraphics.pose(),
+            texture = dnaFramesResource,
+            x = bgX + DNA_PROGRESS_X,
+            y = topPos + DNA_PROGRESS_Y,
+            width = DNA_PROGRESS_WIDTH,
+            height = DNA_PROGRESS_HEIGHT,
+            vOffset = frame * DNA_PROGRESS_HEIGHT,
+            textureWidth = DNA_PROGRESS_WIDTH,
+            textureHeight = DNA_PROGRESS_HEIGHT * DNA_FRAMES
+        )
+    }
+
+    private fun renderChargeInfo(guiGraphics: GuiGraphics) {
+        val required = menu.requiredCharge
+        val types = eggTypes() ?: return
+
+        val syringe = menu.slots[GeneFusionBlockEntity.SLOT_SYRINGE].item
+        val hasSyringe = syringe.`is`(ModRegistries.STEM_CELL_SYRINGE.get())
+        val allCharges = if (hasSyringe) StemCellSyringeItem.getCharges(syringe) else emptyMap()
+
+        val parts = types.map { type ->
+            val charge = allCharges[type] ?: 0
+            val reqText = if (required > 0) " / $required" else ""
+            "${StemCellSyringeItem.displayName(type)}: $charge$reqText"
+        }
+        val line = parts.joinToString("  ")
+        val color = if (required > 0 && types.all { (allCharges[it] ?: 0) >= required }) 0x55FF55 else 0xFF5555
+
+        drawSmallText(
+            guiGraphics,
+            Component.literal(line),
+            titleLabelX.toFloat(),
+            titleLabelY + 20F,
+            centered = true,
+            colour = color
+        )
+    }
+
+    private fun eggTypes(): List<String>? {
+        val stack = menu.container.getItem(GeneFusionBlockEntity.SLOT_EGG_START)
+        val props = CobbreedingCompat.extractProperties(stack) ?: return null
+        val speciesId = props.species ?: return null
+        val species = PokemonSpecies.species.firstOrNull {
+            it.resourceIdentifier.toString().equals(speciesId, ignoreCase = true) ||
+                    it.resourceIdentifier.path.equals(speciesId.substringAfter(':'), ignoreCase = true)
+        } ?: return null
+        return species.types.map { it.name.lowercase() }
+    }
+
+    private fun renderIvChart(guiGraphics: GuiGraphics, ivs: com.cobblemon.mod.common.pokemon.IVs) {
+        val centerX = IV_CHART_CENTER_X
+        val centerY = IV_CHART_CENTER_Y
+        val scale = 0.24F
+        val textureX = centerX - (166F * scale / 2F)
+        val textureY = centerY - (192F * scale / 2F)
+        blitk(
+            matrixStack = guiGraphics.pose(),
             texture = statsChartResource,
-            x = centerX - 166f * scale / 2f,
-            y = centerY - 192f * scale / 2f,
+            x = textureX / scale,
+            y = textureY / scale,
             width = 166,
             height = 192,
             scale = scale
         )
 
-        val be = menu.getBlockEntity() ?: return
-        val ivs = be.getPreviewIvs() ?: return
-        val radius = 13f
-
+        val radius = 14.4F
         drawIvPolygon(
-            centerX = centerX,
-            centerY = centerY,
+            centerX = leftPos + centerX,
+            centerY = topPos + centerY,
             radius = radius,
             ratios = chartStats.map { (_, stat) -> ivs.getOrDefault(stat) / 31F },
-            colour = Vector3f(0f, 216F / 255F, 100F / 255F)
+            colour = Vector3f(216F / 255F, 100F / 255F, 1F)
         )
 
         val values = chartStats.map { (_, stat) -> ivs.getOrDefault(stat).toString() }
         val positions = listOf(
-            Vec2(centerX, centerY - 22F),
-            Vec2(centerX + 22F, centerY - 6F),
-            Vec2(centerX + 22F, centerY + 10F),
-            Vec2(centerX, centerY + 23F),
-            Vec2(centerX - 22F, centerY + 10F),
-            Vec2(centerX - 22F, centerY - 6F)
+            Vec2(centerX, centerY - 24F),
+            Vec2(centerX + 24F, centerY - 7F),
+            Vec2(centerX + 24F, centerY + 11F),
+            Vec2(centerX, centerY + 25F),
+            Vec2(centerX - 24F, centerY + 11F),
+            Vec2(centerX - 24F, centerY - 7F)
         )
         values.forEachIndexed { index, value ->
-            drawTinyText(guiGraphics, Component.literal(chartStats[index].first), positions[index].x, positions[index].y - 5F, centred = true, colour = 0xD8D8D8)
-            drawTinyText(guiGraphics, Component.literal(value), positions[index].x, positions[index].y + 1F, centred = true)
-        }
-    }
-
-    private fun renderChargeBar(guiGraphics: GuiGraphics, x: Int, y: Int, width: Int, height: Int, charge: Int, required: Int) {
-        val ratio = (charge.toFloat() / required.coerceAtLeast(1)).coerceAtMost(1f)
-        val filled = (width * ratio).toInt()
-
-        guiGraphics.fill(x, y, x + width, y + height, 0xFF3A3A3A.toInt())
-        val color = when {
-            ratio >= 1f -> 0xFF55FF55.toInt()
-            ratio >= 0.5f -> 0xFFFFFF55.toInt()
-            else -> 0xFFFF5555.toInt()
-        }
-        if (filled > 0) {
-            guiGraphics.fill(x, y, x + filled, y + height, color)
-        }
-        guiGraphics.renderOutline(x, y, width, height, 0xFF888888.toInt())
-    }
-
-    private fun addButton(x: Int, y: Int, width: Int, height: Int, label: String, onPress: () -> Unit): PcTextButton {
-        return addRenderableWidget(PcTextButton(x, y, width, height, Component.literal(label), onPress))
-    }
-
-    private fun addFuseButton(x: Int, y: Int, width: Int, height: Int, onPress: () -> Unit): PcTextButton {
-        return addRenderableWidget(PcTextButton(x, y, width, height, Component.translatable("gui.cobblemon_incubator.gene_fusion.fuse"), onPress))
-    }
-
-    private fun chartPoints(centerX: Float, centerY: Float, radius: Float): List<Vec2> {
-        val startAngle = -90.0
-        val step = 360.0 / chartStats.size
-        return List(chartStats.size) { index ->
-            val angle = Math.toRadians(startAngle + index * step)
-            Vec2(
-                centerX + radius * Math.cos(angle).toFloat(),
-                centerY + radius * Math.sin(angle).toFloat()
+            drawTinyText(
+                guiGraphics,
+                Component.literal(chartStats[index].first),
+                positions[index].x,
+                positions[index].y - 5F,
+                centered = true,
+                colour = 0xD8D8D8
+            )
+            drawTinyText(
+                guiGraphics,
+                Component.literal(value),
+                positions[index].x,
+                positions[index].y + 1F,
+                centered = true
             )
         }
+    }
+
+    private fun updateModelWidget(properties: PokemonProperties?) {
+        val key = properties?.asString(" ")
+        if (key == modelKey) return
+        modelKey = key
+
+        val renderable = runCatching { properties?.create()?.asRenderablePokemon() }.getOrNull()
+            ?: runCatching { properties?.asRenderablePokemon() }.getOrNull()
+
+        modelWidget = renderable?.let {
+            ModelWidget(
+                pX = leftPos - X_OFFSET + PORTRAIT_X,
+                pY = topPos + PORTRAIT_Y,
+                pWidth = PORTRAIT_SIZE,
+                pHeight = PORTRAIT_SIZE,
+                pokemon = it,
+                baseScale = 2.0F,
+                rotationY = 325F,
+                offsetY = -10.0,
+                playCryOnClick = false,
+                shouldFollowCursor = true
+            )
+        }
+    }
+
+    private fun eggProperties(): PokemonProperties? {
+        val stack = menu.container.getItem(0)
+        return CobbreedingCompat.extractProperties(stack)
+    }
+
+    private fun displayName(value: String?): String {
+        val clean = value?.substringAfter(':')?.substringAfterLast('/') ?: return "Unknown"
+        return clean.split('-', '_', ' ')
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } }
+    }
+
+    private fun String.fit(max: Int): String {
+        return if (length <= max) this else take(max - 1) + "."
+    }
+
+    private fun drawPcText(
+        guiGraphics: GuiGraphics,
+        text: Component,
+        x: Float,
+        y: Float,
+        centered: Boolean = false,
+        shadow: Boolean = false,
+        colour: Int = 0xFFFFFF
+    ) {
+        val drawX = if (centered) x.roundToInt() - font.width(text) / 2 else x.roundToInt()
+        guiGraphics.drawString(font, text, drawX, y.roundToInt(), colour, shadow)
+    }
+
+    private fun drawSmallText(
+        guiGraphics: GuiGraphics,
+        text: Component,
+        x: Float,
+        y: Float,
+        centered: Boolean = false,
+        colour: Int = 0xFFFFFF,
+        scale: Float = 0.65F
+    ) {
+        val pose = guiGraphics.pose()
+        val drawX = if (centered) x - (font.width(text) * scale / 2F) else x
+        pose.pushPose()
+        pose.scale(scale, scale, 1F)
+        guiGraphics.drawString(font, text, (drawX / scale).roundToInt(), (y / scale).roundToInt(), colour, false)
+        pose.popPose()
+    }
+
+    private fun drawTinyText(
+        guiGraphics: GuiGraphics,
+        text: Component,
+        x: Float,
+        y: Float,
+        centered: Boolean = false,
+        colour: Int = 0xFFFFFF,
+        scale: Float = 0.48F
+    ) {
+        val pose = guiGraphics.pose()
+        val drawX = if (centered) x - (font.width(text) * scale / 2F) else x
+        pose.pushPose()
+        pose.scale(scale, scale, 1F)
+        guiGraphics.drawString(font, text, (drawX / scale).roundToInt(), (y / scale).roundToInt(), colour, false)
+        pose.popPose()
     }
 
     private fun drawIvPolygon(centerX: Float, centerY: Float, radius: Float, ratios: List<Float>, colour: Vector3f) {
@@ -236,59 +448,40 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F)
     }
 
-    private fun displayName(value: String?): String {
-        val clean = value?.substringAfter(':')?.substringAfterLast('/') ?: return "Any"
-        return clean.split('-', '_', ' ')
-            .filter { it.isNotBlank() }
-            .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } }
+    private fun chartPoints(centerX: Float, centerY: Float, radius: Float): List<Vec2> {
+        val startAngle = -90.0
+        val step = 360.0 / chartStats.size
+        return List(chartStats.size) { index ->
+            val angle = Math.toRadians(startAngle + index * step)
+            Vec2(
+                centerX + radius * Math.cos(angle).toFloat(),
+                centerY + radius * Math.sin(angle).toFloat()
+            )
+        }
     }
 
-    private fun drawPcText(
-        guiGraphics: GuiGraphics,
-        text: Component,
-        x: Float,
-        y: Float,
-        centred: Boolean = false,
-        shadow: Boolean = false,
-        colour: Int = 0xFFFFFF,
-        scale: Float = 0.85F
-    ) {
-        val drawX = if (centred) x.roundToInt() - font.width(text) / 2 else x.roundToInt()
-        guiGraphics.drawString(font, text, drawX, y.roundToInt(), colour, shadow)
-    }
+    private class ArrowButton(
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+        message: Component,
+        onPress: OnPress
+    ) : Button(x, y, width, height, message, onPress, DEFAULT_NARRATION) {
+        override fun renderWidget(context: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
+            val font = Minecraft.getInstance().font
+            val colour = when {
+                !active -> 0x666666
+                isHovered() -> 0xFFFFFF
+                else -> 0xB8B8B8
+            }
+            val textX = x + width / 2 - font.width(message) / 2
+            context.drawString(font, message, textX, y + 3, colour, false)
+        }
 
-    private fun drawSmallText(
-        guiGraphics: GuiGraphics,
-        text: Component,
-        x: Float,
-        y: Float,
-        centred: Boolean = false,
-        colour: Int = 0xFFFFFF,
-        scale: Float = 0.65F
-    ) {
-        val pose = guiGraphics.pose()
-        val drawX = if (centred) x - (font.width(text) * scale / 2F) else x
-        pose.pushPose()
-        pose.scale(scale, scale, 1F)
-        guiGraphics.drawString(font, text, (drawX / scale).roundToInt(), (y / scale).roundToInt(), colour, false)
-        pose.popPose()
-    }
-
-    private fun drawTinyText(
-        guiGraphics: GuiGraphics,
-        text: Component,
-        x: Float,
-        y: Float,
-        centred: Boolean = false,
-        colour: Int = 0xFFFFFF,
-        scale: Float = 0.48F
-    ) {
-        val pose = guiGraphics.pose()
-        val drawX = if (centred) x - (font.width(text) * scale / 2F) else x
-        pose.pushPose()
-        pose.scale(scale, scale, 1F)
-        guiGraphics.drawString(font, text, (drawX / scale).roundToInt(), (y / scale).roundToInt(), colour, false)
-        pose.popPose()
+        override fun playDownSound(soundManager: SoundManager) {
+            soundManager.play(SimpleSoundInstance.forUI(CobblemonSounds.PC_CLICK, 1F))
+        }
     }
 
     private class PcTextButton(
@@ -297,14 +490,10 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
         width: Int,
         height: Int,
         message: Component,
-        private val onPressAction: () -> Unit
-    ) : Button(x, y, width, height, message, { onPressAction() }, DEFAULT_NARRATION) {
-        var highlighted = false
-
+        onPress: OnPress
+    ) : Button(x, y, width, height, message, onPress, DEFAULT_NARRATION) {
         override fun renderWidget(context: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
             val base = when {
-                highlighted && isHovered() -> 0xFF78967B.toInt()
-                highlighted -> 0xFF627D65.toInt()
                 isHovered() -> 0xFF858585.toInt()
                 else -> 0xFF6F6F6F.toInt()
             }
@@ -319,7 +508,7 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
             val font = Minecraft.getInstance().font
             val colour = if (active) 0xFFFFFF else 0xBDBDBD
             val textX = x + width / 2 - font.width(message) / 2
-            context.drawString(font, message, textX, y + (height - 8) / 2, colour, true)
+            context.drawString(font, message, textX, y + 5, colour, true)
         }
 
         override fun playDownSound(soundManager: SoundManager) {
@@ -328,14 +517,49 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
     }
 
     companion object {
-        private const val BASE_WIDTH = 349
-        private const val BASE_HEIGHT = 205
+        private const val TEXTURE_WIDTH = 269
+        private const val TEXTURE_HEIGHT = 205
+        private const val X_OFFSET = 38
+
+        private const val PORTRAIT_X = 6
+        private const val PORTRAIT_Y = 27
+        private const val PORTRAIT_SIZE = 66
+
+        private const val NATURE_ARROW_X = 9
+        private const val NATURE_ARROW_RIGHT_X = 59
+        private const val NATURE_ARROW_Y = 100
+        private const val ABILITY_ARROW_X = 9
+        private const val ABILITY_ARROW_RIGHT_X = 59
+        private const val ABILITY_ARROW_Y = 120
+
+        private const val NATURE_LABEL_Y = 96F
+        private const val NATURE_VALUE_Y = 105F
+        private const val ABILITY_LABEL_Y = 116F
+        private const val ABILITY_VALUE_Y = 125F
+        private const val NATURE_TEXT_X = 0F
+        private const val ABILITY_TEXT_X = 0F
+
+        private const val IV_CHART_CENTER_X = 4F
+        private const val IV_CHART_CENTER_Y = 163.7F
+
+        private const val DNA_PROGRESS_X = 152
+        private const val DNA_PROGRESS_Y = 44
+        private const val DNA_PROGRESS_WIDTH = 52
+        private const val DNA_PROGRESS_HEIGHT = 60
+        private const val DNA_FRAMES = 10
+
+        private const val FUSE_BUTTON_X = 206
+        private const val FUSE_BUTTON_Y = 66
+        private const val FUSE_BUTTON_WIDTH = 40
+        private const val FUSE_BUTTON_HEIGHT = 16
 
         private fun incubatorResource(path: String): ResourceLocation {
             return ResourceLocation.fromNamespaceAndPath(CobblemonIncubator.MOD_ID, path)
         }
 
         private val backgroundResource = incubatorResource("textures/gui/gene_fusion.png")
+        private val portraitBackgroundResource = incubatorResource("textures/gui/portrait_background.png")
+        private val dnaFramesResource = incubatorResource("textures/gui/dna_frame.png")
         private val statsChartResource = cobblemonResource("textures/gui/summary/summary_stats_chart.png")
     }
 }

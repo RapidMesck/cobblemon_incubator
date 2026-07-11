@@ -1,7 +1,9 @@
 package com.nbp.cobblemon_incubator.blockentity
 
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties
+import com.cobblemon.mod.common.api.pokemon.PokemonSpecies
 import com.cobblemon.mod.common.api.pokemon.stats.Stats
+import com.cobblemon.mod.common.api.types.ElementalType
 import com.cobblemon.mod.common.pokemon.IVs
 import com.nbp.cobblemon_incubator.block.GeneFusionBlock
 import com.nbp.cobblemon_incubator.config.IncubatorConfig
@@ -36,10 +38,36 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
         const val CONTAINER_SIZE = 8
         const val DATA_COUNT = 6
 
-        val STATS_ORDER = listOf(Stats.HP, Stats.ATTACK, Stats.DEFENCE, Stats.SPECIAL_ATTACK, Stats.SPECIAL_DEFENCE, Stats.SPEED)
+        val STATS_ORDER =
+            listOf(Stats.HP, Stats.ATTACK, Stats.DEFENCE, Stats.SPECIAL_ATTACK, Stats.SPECIAL_DEFENCE, Stats.SPEED)
 
         fun serverTick(level: Level, pos: BlockPos, state: BlockState, blockEntity: GeneFusionBlockEntity) {
             blockEntity.tickServer(level, pos, state)
+        }
+
+        fun natureOptions(eggs: List<ItemStack>): List<String> {
+            return eggs.mapNotNull { CobbreedingCompat.extractProperties(it)?.nature }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .sorted()
+        }
+
+        fun abilityOptions(eggs: List<ItemStack>): List<String> {
+            return eggs.mapNotNull { CobbreedingCompat.extractProperties(it)?.ability }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .sorted()
+        }
+
+        fun bestIvs(eggs: List<ItemStack>): IVs? {
+            val allProperties = eggs.mapNotNull { CobbreedingCompat.extractProperties(it) }
+            if (allProperties.isEmpty()) return null
+
+            val result = IVs()
+            STATS_ORDER.forEach { stat ->
+                result[stat] = allProperties.maxOf { it.ivs?.getOrDefault(stat) ?: 0 }
+            }
+            return result
         }
     }
 
@@ -53,7 +81,7 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
             return when (index) {
                 0 -> availableNatures().indexOf(selectedNature).coerceAtLeast(0)
                 1 -> availableAbilities().indexOf(selectedAbility).coerceAtLeast(0)
-                2 -> syringeCharge()
+                2 -> syringeChargeForTypes()
                 3 -> requiredCharge()
                 4 -> fusionStatus()
                 5 -> eggCount()
@@ -70,7 +98,10 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
 
     override fun getContainerSize(): Int = CONTAINER_SIZE
     override fun getItems(): NonNullList<ItemStack> = items
-    override fun setItems(items: NonNullList<ItemStack>) { this.items = items }
+    override fun setItems(items: NonNullList<ItemStack>) {
+        this.items = items
+    }
+
     override fun getDefaultName(): Component = Component.translatable("container.cobblemon_incubator.gene_fusion")
     override fun createMenu(containerId: Int, inventory: Inventory): AbstractContainerMenu {
         return GeneFusionMenu(containerId, inventory, this, dataAccess)
@@ -105,7 +136,19 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
 
     override fun canPlaceItem(slot: Int, stack: ItemStack): Boolean {
         return when (slot) {
-            in SLOT_EGG_START..SLOT_EGG_END -> CobbreedingCompat.isEgg(stack)
+            in SLOT_EGG_START..SLOT_EGG_END -> {
+                if (!CobbreedingCompat.isEgg(stack)) return false
+                val newSpecies = CobbreedingCompat.extractProperties(stack)?.species ?: return false
+                for (i in SLOT_EGG_START..SLOT_EGG_END) {
+                    if (i == slot) continue
+                    val existing = items[i]
+                    if (existing.isEmpty) continue
+                    val existingSpecies = CobbreedingCompat.extractProperties(existing)?.species
+                    if (existingSpecies != null && existingSpecies != newSpecies) return false
+                }
+                true
+            }
+
             SLOT_OUTPUT -> false
             SLOT_SYRINGE -> stack.`is`(ModRegistries.STEM_CELL_SYRINGE.get())
             else -> false
@@ -116,43 +159,45 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
         updateBlockState()
     }
 
+    private fun eggItems(): List<ItemStack> = (SLOT_EGG_START..SLOT_EGG_END).map { items[it] }
+
     fun eggCount(): Int {
         return (SLOT_EGG_START..SLOT_EGG_END).count { CobbreedingCompat.isEgg(items[it]) }
     }
 
-    fun syringeCharge(): Int {
+    fun syringeChargeForTypes(): Int {
         val syringe = items[SLOT_SYRINGE]
         if (!syringe.`is`(ModRegistries.STEM_CELL_SYRINGE.get())) return 0
-        return StemCellSyringeItem.getCharge(syringe)
+        val types = eggTypes() ?: return 0
+        return StemCellSyringeItem.getChargeForTypes(syringe, types)
+    }
+
+    fun eggTypes(): List<String>? {
+        val baseEgg = items[SLOT_EGG_START]
+        val props = CobbreedingCompat.extractProperties(baseEgg) ?: return null
+        val speciesId = props.species ?: return null
+        val species = PokemonSpecies.getByName(speciesId) ?: return null
+        return species.types.map { it.name.lowercase() }
     }
 
     fun requiredCharge(): Int {
         val bestIvs = computeBestIvs() ?: return 0
         val sum = STATS_ORDER.sumOf { bestIvs.getOrDefault(it) }
-        return (sum * IncubatorConfig.geneFusionCostMultiplier).roundToInt().coerceAtLeast(0)
+        val eggCount = eggCount().coerceIn(2, 6)
+        val raw =
+            (sum * eggCount / 3.0 * IncubatorConfig.geneFusionChargePerLevel * IncubatorConfig.geneFusionCostMultiplier).roundToInt()
+        return raw.coerceIn(1, IncubatorConfig.geneFusionSyringeMaxCharge)
     }
 
     fun fusionStatus(): Int {
         if (eggCount() < 2) return 0
-        if (syringeCharge() < requiredCharge()) return 0
+        if (syringeChargeForTypes() < requiredCharge()) return 0
         return 1
     }
 
-    fun availableNatures(): List<String> {
-        return (SLOT_EGG_START..SLOT_EGG_END)
-            .mapNotNull { CobbreedingCompat.extractProperties(items[it])?.nature }
-            .filter { it.isNotBlank() }
-            .distinct()
-            .sorted()
-    }
+    fun availableNatures(): List<String> = natureOptions(eggItems())
 
-    fun availableAbilities(): List<String> {
-        return (SLOT_EGG_START..SLOT_EGG_END)
-            .mapNotNull { CobbreedingCompat.extractProperties(items[it])?.ability }
-            .filter { it.isNotBlank() }
-            .distinct()
-            .sorted()
-    }
+    fun availableAbilities(): List<String> = abilityOptions(eggItems())
 
     fun getSelectedNature(): String = selectedNature
     fun getSelectedAbility(): String = selectedAbility
@@ -167,27 +212,16 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
         setChanged()
     }
 
-    fun computeBestIvs(): IVs? {
-        val allProperties = (SLOT_EGG_START..SLOT_EGG_END)
-            .mapNotNull { CobbreedingCompat.extractProperties(items[it]) }
-        if (allProperties.isEmpty()) return null
-
-        val result = IVs()
-        STATS_ORDER.forEach { stat ->
-            val best = allProperties.maxOf { it.ivs?.getOrDefault(stat) ?: 0 }
-            result[stat] = best
-        }
-        return result
-    }
+    fun computeBestIvs(): IVs? = bestIvs(eggItems())
 
     fun getPreviewIvs(): IVs? = computeBestIvs()
 
     fun performFusion(): Boolean {
+        if (!IncubatorConfig.geneFusionEnabled) return false
         if (fusionStatus() != 1) return false
 
         val bestIvs = computeBestIvs() ?: return false
-        val allProps = (SLOT_EGG_START..SLOT_EGG_END)
-            .mapNotNull { CobbreedingCompat.extractProperties(items[it]) }
+        val allProps = eggItems().mapNotNull { CobbreedingCompat.extractProperties(it) }
         if (allProps.isEmpty()) return false
 
         val baseEgg = items[SLOT_EGG_START]
@@ -217,7 +251,8 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
 
         val syringe = items[SLOT_SYRINGE]
         val cost = requiredCharge()
-        if (!StemCellSyringeItem.consumeCharge(syringe, cost)) return false
+        val types = eggTypes() ?: return false
+        if (!StemCellSyringeItem.consumeCharge(syringe, types, cost)) return false
 
         for (i in SLOT_EGG_START..SLOT_EGG_END) {
             items[i] = ItemStack.EMPTY

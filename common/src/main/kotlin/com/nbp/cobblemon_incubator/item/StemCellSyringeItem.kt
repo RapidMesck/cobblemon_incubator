@@ -4,6 +4,7 @@ import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.TooltipFlag
@@ -11,29 +12,73 @@ import net.minecraft.world.item.TooltipFlag
 class StemCellSyringeItem(properties: Properties) : Item(properties) {
 
     companion object {
-        fun getCharge(stack: ItemStack): Int {
-            return stack.getOrDefault(ModRegistries.SYRINGE_CHARGE.get(), 0)
+        private const val SEPARATOR = ";"
+        private const val KV_SEPARATOR = ":"
+
+        fun getMaxPerType(): Int = IncubatorConfig.geneFusionSyringeMaxCharge
+
+        fun getCharges(stack: ItemStack): Map<String, Int> {
+            return decode(stack.getOrDefault(ModRegistries.SYRINGE_CHARGE.get(), ""))
         }
 
-        fun setCharge(stack: ItemStack, charge: Int) {
-            stack.set(ModRegistries.SYRINGE_CHARGE.get(), charge.coerceIn(0, IncubatorConfig.geneFusionSyringeMaxCharge))
+        fun setCharges(stack: ItemStack, charges: Map<String, Int>) {
+            stack.set(ModRegistries.SYRINGE_CHARGE.get(), encode(charges))
         }
 
-        fun getMaxCharge(): Int = IncubatorConfig.geneFusionSyringeMaxCharge
-
-        fun addCharge(stack: ItemStack, amount: Int): Int {
-            val current = getCharge(stack)
-            val max = getMaxCharge()
-            val newCharge = (current + amount).coerceAtMost(max)
-            setCharge(stack, newCharge)
-            return newCharge - current
+        fun getCharge(stack: ItemStack, type: String): Int {
+            return getCharges(stack)[type] ?: 0
         }
 
-        fun consumeCharge(stack: ItemStack, amount: Int): Boolean {
-            val current = getCharge(stack)
-            if (current < amount) return false
-            setCharge(stack, current - amount)
+        fun getTotalCharge(stack: ItemStack): Int {
+            return getCharges(stack).values.sum()
+        }
+
+        fun addCharge(stack: ItemStack, type: String, amount: Int): Int {
+            val charges = getCharges(stack).toMutableMap()
+            val current = charges[type] ?: 0
+            val max = getMaxPerType()
+            val added = amount.coerceAtMost(max - current)
+            if (added <= 0) return 0
+            charges[type] = current + added
+            setCharges(stack, charges)
+            return added
+        }
+
+        fun consumeCharge(stack: ItemStack, types: List<String>, amount: Int): Boolean {
+            val charges = getCharges(stack).toMutableMap()
+            for (type in types) {
+                val current = charges[type] ?: 0
+                if (current < amount) return false
+            }
+            for (type in types) {
+                charges[type] = (charges[type] ?: 0) - amount
+            }
+            setCharges(stack, charges.filterValues { it > 0 })
             return true
+        }
+
+        fun getChargeForTypes(stack: ItemStack, types: List<String>): Int {
+            return types.minOfOrNull { getCharge(stack, it) } ?: 0
+        }
+
+        private fun encode(charges: Map<String, Int>): String {
+            return charges.entries.joinToString(SEPARATOR) { "${it.key}$KV_SEPARATOR${it.value}" }
+        }
+
+        private fun decode(encoded: String): Map<String, Int> {
+            if (encoded.isBlank()) return emptyMap()
+            return encoded.split(SEPARATOR).mapNotNull { part ->
+                val parts = part.split(KV_SEPARATOR, limit = 2)
+                if (parts.size == 2) {
+                    val value = parts[1].toIntOrNull() ?: return@mapNotNull null
+                    parts[0] to value
+                } else null
+            }.toMap()
+        }
+
+        fun displayName(type: String): String {
+            val key = type.substringAfterLast(':').substringAfterLast('/')
+            return key.replaceFirstChar { it.uppercase() }
         }
     }
 
@@ -44,42 +89,53 @@ class StemCellSyringeItem(properties: Properties) : Item(properties) {
         tooltipFlag: TooltipFlag
     ) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag)
-        val charge = getCharge(stack)
-        val max = getMaxCharge()
-        val percent = if (max > 0) (charge * 100 / max) else 0
-        val color = when {
-            percent >= 80 -> ChatFormatting.GREEN
-            percent >= 40 -> ChatFormatting.YELLOW
-            else -> ChatFormatting.RED
+        val charges = getCharges(stack)
+
+        if (charges.isEmpty()) {
+            tooltipComponents.add(
+                Component.translatable("item.cobblemon_incubator.stem_cell_syringe.empty")
+                    .withStyle(ChatFormatting.GRAY)
+            )
+        } else {
+            val max = getMaxPerType()
+            val sorted = charges.entries.sortedByDescending { it.value }
+            for ((type, charge) in sorted) {
+                val color = when {
+                    charge >= max -> ChatFormatting.GREEN
+                    charge >= max * 0.4 -> ChatFormatting.YELLOW
+                    else -> ChatFormatting.RED
+                }
+                tooltipComponents.add(
+                    Component.literal("  ${displayName(type)}: $charge / $max").withStyle(color)
+                )
+            }
         }
+
         tooltipComponents.add(
-            Component.translatable(
-                "item.cobblemon_incubator.stem_cell_syringe.charge",
-                charge, max
-            ).withStyle(color)
-        )
-        tooltipComponents.add(
-            Component.translatable(
-                "item.cobblemon_incubator.stem_cell_syringe.description"
-            ).withStyle(ChatFormatting.GRAY)
+            Component.translatable("item.cobblemon_incubator.stem_cell_syringe.description")
+                .withStyle(ChatFormatting.GRAY)
         )
     }
 
     override fun isBarVisible(stack: ItemStack): Boolean {
-        return getCharge(stack) > 0
+        return getCharges(stack).isNotEmpty()
     }
 
     override fun getBarWidth(stack: ItemStack): Int {
-        val max = getMaxCharge()
-        if (max <= 0) return 0
-        return (13.0f * getCharge(stack) / max).toInt().coerceIn(0, 13)
+        val total = getTotalCharge(stack)
+        val maxTotal = getMaxPerType() * getCharges(stack).size.coerceAtLeast(1)
+        if (maxTotal <= 0) return 0
+        return (13.0f * total / maxTotal).toInt().coerceIn(0, 13)
     }
 
     override fun getBarColor(stack: ItemStack): Int {
-        val percent = getCharge(stack).toFloat() / getMaxCharge().coerceAtLeast(1)
+        val charges = getCharges(stack)
+        if (charges.isEmpty()) return 0xFF5555
+        val max = getMaxPerType()
+        val avgPercent = charges.values.map { it.toFloat() / max }.average().toFloat()
         return when {
-            percent >= 0.8f -> 0x55FF55
-            percent >= 0.4f -> 0xFFFF55
+            avgPercent >= 0.8f -> 0x55FF55
+            avgPercent >= 0.4f -> 0xFFFF55
             else -> 0xFF5555
         }
     }

@@ -40,8 +40,12 @@
   "block.cobblemon_incubator.gene_fusion": "Maquina de Fusao Genetica",
   "container.cobblemon_incubator.gene_fusion": "Fusao Genetica",
   "item.cobblemon_incubator.stem_cell_syringe": "Seringa de Celulas Tronco",
-  "item.cobblemon_incubator.stem_cell_syringe.description": "Absorve celulas de Pokemon selvagens derrotados. Usada para alimentar a Maquina de Fusao Genetica.",
-  "item.cobblemon_incubator.stem_cell_syringe.charge": "Carga: %s / %s",
+  "item.cobblemon_incubator.stem_cell_syringe.description": "Absorve celulas de Pokemon selvagens derrotados por tipo. Usada para alimentar a Maquina de Fusao Genetica.",
+  "item.cobblemon_incubator.stem_cell_syringe.empty": "Sem celulas armazenadas",
   "gui.cobblemon_incubator.gene_fusion.fuse": "Fundir",
-  "gui.cobblemon_incubator.gene_fusion.fuse.tooltip": "Combina ovos em um unico ovo com os melhores stats"
+  "gui.cobblemon_incubator.gene_fusion.fuse.tooltip": "Combina ovos em um unico ovo com os melhores stats",
+  "item.cobblemon_incubator.gene_fusion.disabled": "Fusao Genetica esta desabilitada na configuracao do servidor.",
+  "command.cobblemon_incubator.fillsyringe.all": "Preencheu todas as seringas com %s celulas de todos os tipos.",
+  "command.cobblemon_incubator.fillsyringe.type": "Preencheu seringas com %s celulas do tipo '%s'.",
+  "command.cobblemon_incubator.fillsyringe.no_syringe": "Nenhuma Seringa de Celulas Tronco encontrada no seu inventario."
 }

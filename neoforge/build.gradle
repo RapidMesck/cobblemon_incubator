@@ -30,6 +30,8 @@ dependencies {
 
     modImplementation "com.cobblemon:neoforge:${rootProject.cobblemon_version}"
 
+    modRuntimeOnly files("libs/Cobbreeding-neoforge-2.2.2.jar")
+
     implementation "thedarkcolour:kotlinforforge-neoforge:${rootProject.ktff_version}"
 
     common(project(path: ":common", configuration: "namedElements")) {

@@ -32,6 +32,9 @@ dependencies {
 
     modImplementation "com.cobblemon:fabric:${rootProject.cobblemon_version}"
 
+    modRuntimeOnly files("libs/Cobbreeding-fabric-2.2.2.jar")
+    modRuntimeOnly files("libs/cloth-config-15.0.140-fabric.jar")
+
     common(project(path: ":common", configuration: "namedElements")) {
         transitive = false
     }

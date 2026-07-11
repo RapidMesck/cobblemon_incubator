@@ -3,6 +3,7 @@ package com.nbp.cobblemon_incubator.block
 import com.cobblemon.mod.common.CobblemonSounds
 import com.mojang.serialization.MapCodec
 import com.nbp.cobblemon_incubator.blockentity.GeneFusionBlockEntity
+import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import dev.architectury.registry.menu.MenuRegistry
 import net.minecraft.core.BlockPos
@@ -101,7 +102,13 @@ class GeneFusionBlock(properties: Properties) : BaseEntityBlock(properties) {
         return ItemInteractionResult.sidedSuccess(level.isClientSide)
     }
 
-    override fun onRemove(state: BlockState, level: Level, pos: BlockPos, newState: BlockState, movedByPiston: Boolean) {
+    override fun onRemove(
+        state: BlockState,
+        level: Level,
+        pos: BlockPos,
+        newState: BlockState,
+        movedByPiston: Boolean
+    ) {
         if (!state.`is`(newState.block)) {
             val blockEntity = level.getBlockEntity(pos)
             if (blockEntity is GeneFusionBlockEntity) {
@@ -118,6 +125,13 @@ class GeneFusionBlock(properties: Properties) : BaseEntityBlock(properties) {
 
     private fun openMenu(level: Level, pos: BlockPos, player: Player) {
         if (level.isClientSide || player !is ServerPlayer) return
+        if (!IncubatorConfig.geneFusionEnabled) {
+            player.displayClientMessage(
+                net.minecraft.network.chat.Component.translatable("item.cobblemon_incubator.gene_fusion.disabled"),
+                true
+            )
+            return
+        }
         val blockEntity = level.getBlockEntity(pos)
         if (blockEntity is GeneFusionBlockEntity) {
             MenuRegistry.openExtendedMenu(player, blockEntity) { buffer -> buffer.writeBlockPos(pos) }

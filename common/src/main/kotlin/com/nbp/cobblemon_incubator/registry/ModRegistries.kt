@@ -6,6 +6,7 @@ import com.nbp.cobblemon_incubator.block.EggIncubatorBlock
 import com.nbp.cobblemon_incubator.block.GeneFusionBlock
 import com.nbp.cobblemon_incubator.blockentity.EggIncubatorBlockEntity
 import com.nbp.cobblemon_incubator.blockentity.GeneFusionBlockEntity
+import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.item.BreedingScannerItem
 import com.nbp.cobblemon_incubator.item.FilterUpgradeItem
 import com.nbp.cobblemon_incubator.item.PcUpgradeItem
@@ -19,12 +20,15 @@ import dev.architectury.registry.registries.DeferredRegister
 import dev.architectury.registry.registries.RegistrySupplier
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.Registries
+import net.minecraft.ChatFormatting
+import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.CreativeModeTab
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.TooltipFlag
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.SoundType
 import net.minecraft.world.level.block.entity.BlockEntityType
@@ -35,7 +39,8 @@ object ModRegistries {
     private val ITEMS: DeferredRegister<Item> = DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.ITEM)
     private val BLOCK_ENTITY_TYPES: DeferredRegister<BlockEntityType<*>> =
         DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.BLOCK_ENTITY_TYPE)
-    private val MENU_TYPES: DeferredRegister<MenuType<*>> = DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.MENU)
+    private val MENU_TYPES: DeferredRegister<MenuType<*>> =
+        DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.MENU)
     private val CREATIVE_MODE_TABS: DeferredRegister<CreativeModeTab> =
         DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.CREATIVE_MODE_TAB)
     private val DATA_COMPONENT_TYPES: DeferredRegister<DataComponentType<*>> =
@@ -46,6 +51,7 @@ object ModRegistries {
             BlockBehaviour.Properties.of()
                 .strength(3.5f, 6.0f)
                 .sound(SoundType.COPPER)
+                .requiresCorrectToolForDrops()
                 .noOcclusion()
         )
     }
@@ -79,12 +85,28 @@ object ModRegistries {
             BlockBehaviour.Properties.of()
                 .strength(3.5f, 6.0f)
                 .sound(SoundType.COPPER)
+                .requiresCorrectToolForDrops()
                 .noOcclusion()
         )
     }
 
     val GENE_FUSION_ITEM: RegistrySupplier<Item> = ITEMS.register("gene_fusion") {
-        BlockItem(GENE_FUSION.get(), Item.Properties())
+        object : BlockItem(GENE_FUSION.get(), Item.Properties()) {
+            override fun appendHoverText(
+                stack: ItemStack,
+                context: TooltipContext,
+                tooltipComponents: MutableList<Component>,
+                tooltipFlag: TooltipFlag
+            ) {
+                super.appendHoverText(stack, context, tooltipComponents, tooltipFlag)
+                if (!IncubatorConfig.geneFusionEnabled) {
+                    tooltipComponents.add(
+                        Component.translatable("item.cobblemon_incubator.gene_fusion.disabled")
+                            .withStyle(ChatFormatting.RED)
+                    )
+                }
+            }
+        }
     }
 
     val CREATIVE_TAB: RegistrySupplier<CreativeModeTab> = CREATIVE_MODE_TABS.register("main") {
@@ -104,20 +126,26 @@ object ModRegistries {
         }
     }
 
-    val PC_UPGRADE_OWNER_UUID: RegistrySupplier<DataComponentType<String>> = DATA_COMPONENT_TYPES.register("pc_upgrade_owner_uuid") {
-        DataComponentType.builder<String>().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8).build()
-    }
+    val PC_UPGRADE_OWNER_UUID: RegistrySupplier<DataComponentType<String>> =
+        DATA_COMPONENT_TYPES.register("pc_upgrade_owner_uuid") {
+            DataComponentType.builder<String>().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                .build()
+        }
 
-    val PC_UPGRADE_OWNER_NAME: RegistrySupplier<DataComponentType<String>> = DATA_COMPONENT_TYPES.register("pc_upgrade_owner_name") {
-        DataComponentType.builder<String>().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8).build()
-    }
+    val PC_UPGRADE_OWNER_NAME: RegistrySupplier<DataComponentType<String>> =
+        DATA_COMPONENT_TYPES.register("pc_upgrade_owner_name") {
+            DataComponentType.builder<String>().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                .build()
+        }
 
     val FILTER_CONFIG: RegistrySupplier<DataComponentType<String>> = DATA_COMPONENT_TYPES.register("filter_config") {
-        DataComponentType.builder<String>().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8).build()
+        DataComponentType.builder<String>().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8)
+            .build()
     }
 
-    val SYRINGE_CHARGE: RegistrySupplier<DataComponentType<Int>> = DATA_COMPONENT_TYPES.register("syringe_charge") {
-        DataComponentType.builder<Int>().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT).build()
+    val SYRINGE_CHARGE: RegistrySupplier<DataComponentType<String>> = DATA_COMPONENT_TYPES.register("syringe_charge") {
+        DataComponentType.builder<String>().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8)
+            .build()
     }
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")

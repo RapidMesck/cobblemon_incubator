@@ -40,8 +40,12 @@
   "block.cobblemon_incubator.gene_fusion": "Gene Fusion Machine",
   "container.cobblemon_incubator.gene_fusion": "Gene Fusion",
   "item.cobblemon_incubator.stem_cell_syringe": "Stem Cell Syringe",
-  "item.cobblemon_incubator.stem_cell_syringe.description": "Absorbs cells from defeated wild Pokemon. Used to power the Gene Fusion Machine.",
-  "item.cobblemon_incubator.stem_cell_syringe.charge": "Charge: %s / %s",
+  "item.cobblemon_incubator.stem_cell_syringe.description": "Absorbs cells from defeated wild Pokemon per type. Used to power the Gene Fusion Machine.",
+  "item.cobblemon_incubator.stem_cell_syringe.empty": "No cells stored",
   "gui.cobblemon_incubator.gene_fusion.fuse": "Fuse",
-  "gui.cobblemon_incubator.gene_fusion.fuse.tooltip": "Combine eggs into a single egg with the best stats"
+  "gui.cobblemon_incubator.gene_fusion.fuse.tooltip": "Combine eggs into a single egg with the best stats",
+  "item.cobblemon_incubator.gene_fusion.disabled": "Gene Fusion is disabled in the server config.",
+  "command.cobblemon_incubator.fillsyringe.all": "Filled all syringes with %s cells of every type.",
+  "command.cobblemon_incubator.fillsyringe.type": "Filled syringes with %s cells of type '%s'.",
+  "command.cobblemon_incubator.fillsyringe.no_syringe": "No Stem Cell Syringe found in your inventory."
 }
