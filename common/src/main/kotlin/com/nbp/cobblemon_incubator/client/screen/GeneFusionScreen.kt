@@ -276,8 +276,10 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
     }
 
     private fun eggTypes(): List<String>? {
-        val props = menu.clientEggPropertiesOverride?.firstOrNull()
-            ?: CobbreedingCompat.extractProperties(menu.container.getItem(GeneFusionBlockEntity.SLOT_EGG_START))
+        val props = menu.clientEggPropertiesOverride?.firstOrNull { it != null }
+            ?: (GeneFusionBlockEntity.SLOT_EGG_START..GeneFusionBlockEntity.SLOT_EGG_END)
+                .mapNotNull { CobbreedingCompat.extractProperties(menu.container.getItem(it)) }
+                .firstOrNull()
         val speciesId = props?.species ?: return null
         val species = PokemonSpecies.species.firstOrNull {
             it.resourceIdentifier.toString().equals(speciesId, ignoreCase = true) ||
@@ -364,8 +366,10 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
     }
 
     private fun eggProperties(): PokemonProperties? {
-        return menu.clientEggPropertiesOverride?.firstOrNull()
-            ?: CobbreedingCompat.extractProperties(menu.container.getItem(0))
+        return menu.clientEggPropertiesOverride?.firstOrNull { it != null }
+            ?: (GeneFusionBlockEntity.SLOT_EGG_START..GeneFusionBlockEntity.SLOT_EGG_END)
+                .mapNotNull { CobbreedingCompat.extractProperties(menu.container.getItem(it)) }
+                .firstOrNull()
     }
 
     private fun displayName(value: String?): String {
