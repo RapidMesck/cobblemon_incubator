@@ -36,6 +36,7 @@ class GeneFusionBlock(properties: Properties) : BaseEntityBlock(properties) {
     companion object {
         val FACING: DirectionProperty = BlockStateProperties.HORIZONTAL_FACING
         val OPEN: BooleanProperty = BooleanProperty.create("open")
+        val HAS_EGG: BooleanProperty = BooleanProperty.create("has_egg")
         val CODEC: MapCodec<GeneFusionBlock> = simpleCodec(::GeneFusionBlock)
     }
 
@@ -44,6 +45,7 @@ class GeneFusionBlock(properties: Properties) : BaseEntityBlock(properties) {
             stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(OPEN, false)
+                .setValue(HAS_EGG, false)
         )
     }
 
@@ -120,7 +122,7 @@ class GeneFusionBlock(properties: Properties) : BaseEntityBlock(properties) {
     }
 
     override fun createBlockStateDefinition(builder: StateDefinition.Builder<Block, BlockState>) {
-        builder.add(FACING, OPEN)
+        builder.add(FACING, OPEN, HAS_EGG)
     }
 
     private fun openMenu(level: Level, pos: BlockPos, player: Player) {

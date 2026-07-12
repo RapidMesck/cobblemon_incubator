@@ -2,5 +2,10 @@
   "parent": "minecraft:item/generated",
   "textures": {
     "layer0": "cobblemon_incubator:item/stem_cell_syringe"
-  }
+  },
+  "overrides": [
+    {"predicate": {"custom_model_data": 1}, "model": "cobblemon_incubator:item/stem_cell_syringe_1"},
+    {"predicate": {"custom_model_data": 2}, "model": "cobblemon_incubator:item/stem_cell_syringe_2"},
+    {"predicate": {"custom_model_data": 3}, "model": "cobblemon_incubator:item/stem_cell_syringe_3"}
+  ]
 }

@@ -298,9 +298,18 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
     private fun updateBlockState() {
         val level = level ?: return
         val state = blockState
+        val hasEgg = eggCount() > 0
         val open = openers > 0
-        if (state.getValue(GeneFusionBlock.OPEN) != open) {
-            level.setBlock(worldPosition, state.setValue(GeneFusionBlock.OPEN, open), 3)
+        if (state.getValue(GeneFusionBlock.HAS_EGG) != hasEgg ||
+            state.getValue(GeneFusionBlock.OPEN) != open
+        ) {
+            level.setBlock(
+                worldPosition,
+                state
+                    .setValue(GeneFusionBlock.HAS_EGG, hasEgg)
+                    .setValue(GeneFusionBlock.OPEN, open),
+                3
+            )
         }
     }
 }

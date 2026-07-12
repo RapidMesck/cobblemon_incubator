@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "cobblemon_incubator:item/stem_cell_syringe_2"
+  }
+}

@@ -1,33 +1,63 @@
 {
   "variants": {
-    "facing=north,open=false": {
-      "model": "cobblemon_incubator:block/gene_fusion"
+    "facing=north,has_egg=false,open=false": {
+      "model": "cobblemon_incubator:block/gene_fusion_empty"
     },
-    "facing=east,open=false": {
-      "model": "cobblemon_incubator:block/gene_fusion",
+    "facing=east,has_egg=false,open=false": {
+      "model": "cobblemon_incubator:block/gene_fusion_empty",
       "y": 90
     },
-    "facing=south,open=false": {
-      "model": "cobblemon_incubator:block/gene_fusion",
+    "facing=south,has_egg=false,open=false": {
+      "model": "cobblemon_incubator:block/gene_fusion_empty",
       "y": 180
     },
-    "facing=west,open=false": {
-      "model": "cobblemon_incubator:block/gene_fusion",
+    "facing=west,has_egg=false,open=false": {
+      "model": "cobblemon_incubator:block/gene_fusion_empty",
       "y": 270
     },
-    "facing=north,open=true": {
-      "model": "cobblemon_incubator:block/gene_fusion_on"
+    "facing=north,has_egg=true,open=false": {
+      "model": "cobblemon_incubator:block/gene_fusion_occupied"
     },
-    "facing=east,open=true": {
-      "model": "cobblemon_incubator:block/gene_fusion_on",
+    "facing=east,has_egg=true,open=false": {
+      "model": "cobblemon_incubator:block/gene_fusion_occupied",
       "y": 90
     },
-    "facing=south,open=true": {
-      "model": "cobblemon_incubator:block/gene_fusion_on",
+    "facing=south,has_egg=true,open=false": {
+      "model": "cobblemon_incubator:block/gene_fusion_occupied",
       "y": 180
     },
-    "facing=west,open=true": {
-      "model": "cobblemon_incubator:block/gene_fusion_on",
+    "facing=west,has_egg=true,open=false": {
+      "model": "cobblemon_incubator:block/gene_fusion_occupied",
+      "y": 270
+    },
+    "facing=north,has_egg=false,open=true": {
+      "model": "cobblemon_incubator:block/gene_fusion_empty_on"
+    },
+    "facing=east,has_egg=false,open=true": {
+      "model": "cobblemon_incubator:block/gene_fusion_empty_on",
+      "y": 90
+    },
+    "facing=south,has_egg=false,open=true": {
+      "model": "cobblemon_incubator:block/gene_fusion_empty_on",
+      "y": 180
+    },
+    "facing=west,has_egg=false,open=true": {
+      "model": "cobblemon_incubator:block/gene_fusion_empty_on",
+      "y": 270
+    },
+    "facing=north,has_egg=true,open=true": {
+      "model": "cobblemon_incubator:block/gene_fusion_occupied_on"
+    },
+    "facing=east,has_egg=true,open=true": {
+      "model": "cobblemon_incubator:block/gene_fusion_occupied_on",
+      "y": 90
+    },
+    "facing=south,has_egg=true,open=true": {
+      "model": "cobblemon_incubator:block/gene_fusion_occupied_on",
+      "y": 180
+    },
+    "facing=west,has_egg=true,open=true": {
+      "model": "cobblemon_incubator:block/gene_fusion_occupied_on",
       "y": 270
     }
   }

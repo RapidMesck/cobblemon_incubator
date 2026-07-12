@@ -65,24 +65,17 @@ object CobblemonIncubator {
         if (gainedCharges.isEmpty()) return
 
         for (serverPlayer in serverPlayers) {
-            val syringes = findSyringesInInventory(serverPlayer)
-            if (syringes.isEmpty()) continue
-
-            for (syringe in syringes) {
-                for ((type, amount) in gainedCharges) {
-                    StemCellSyringeItem.addCharge(syringe, type, amount)
-                }
+            val syringe = findSyringeInInventory(serverPlayer) ?: continue
+            for ((type, amount) in gainedCharges) {
+                StemCellSyringeItem.addCharge(syringe, type, amount)
             }
         }
     }
 
-    private fun findSyringesInInventory(player: ServerPlayer): List<ItemStack> {
-        val result = mutableListOf<ItemStack>()
+    private fun findSyringeInInventory(player: ServerPlayer): ItemStack? {
         for (stack in player.inventory.items) {
-            if (stack.`is`(ModRegistries.STEM_CELL_SYRINGE.get())) {
-                result.add(stack)
-            }
+            if (stack.`is`(ModRegistries.STEM_CELL_SYRINGE.get())) return stack
         }
-        return result
+        return null
     }
 }

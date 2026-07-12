@@ -17,6 +17,7 @@ object CobblemonIncubatorClient {
         RenderTypeRegistry.register(RenderType.translucent(), ModRegistries.EGG_INCUBATOR.get())
         RenderTypeRegistry.register(RenderType.translucent(), ModRegistries.GENE_FUSION.get())
         RenderTypeRegistry.register(RenderType.cutout(), ModRegistries.EGG_INCUBATOR.get())
+        RenderTypeRegistry.register(RenderType.cutout(), ModRegistries.GENE_FUSION.get())
     }
 
     fun init() {

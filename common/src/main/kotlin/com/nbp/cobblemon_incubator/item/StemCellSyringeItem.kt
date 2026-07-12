@@ -3,6 +3,7 @@ package com.nbp.cobblemon_incubator.item
 import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import net.minecraft.ChatFormatting
+import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.Item
@@ -23,6 +24,7 @@ class StemCellSyringeItem(properties: Properties) : Item(properties) {
 
         fun setCharges(stack: ItemStack, charges: Map<String, Int>) {
             stack.set(ModRegistries.SYRINGE_CHARGE.get(), encode(charges))
+            updateCustomModelData(stack, charges)
         }
 
         fun getCharge(stack: ItemStack, type: String): Int {
@@ -41,6 +43,7 @@ class StemCellSyringeItem(properties: Properties) : Item(properties) {
             if (added <= 0) return 0
             charges[type] = current + added
             setCharges(stack, charges)
+            updateCustomModelData(stack, charges)
             return added
         }
 
@@ -53,7 +56,9 @@ class StemCellSyringeItem(properties: Properties) : Item(properties) {
             for (type in types) {
                 charges[type] = (charges[type] ?: 0) - amount
             }
-            setCharges(stack, charges.filterValues { it > 0 })
+            val filtered = charges.filterValues { it > 0 }
+            setCharges(stack, filtered)
+            updateCustomModelData(stack, filtered)
             return true
         }
 
@@ -74,6 +79,21 @@ class StemCellSyringeItem(properties: Properties) : Item(properties) {
                     parts[0] to value
                 } else null
             }.toMap()
+        }
+
+        private fun updateCustomModelData(stack: ItemStack, charges: Map<String, Int>) {
+            if (charges.isEmpty()) {
+                stack.remove(DataComponents.CUSTOM_MODEL_DATA)
+                return
+            }
+            val max = getMaxPerType()
+            val avgPercent = charges.values.map { it.toFloat() / max }.average().toFloat()
+            val level = when {
+                avgPercent >= 0.66f -> 3
+                avgPercent >= 0.33f -> 2
+                else -> 1
+            }
+            stack.set(DataComponents.CUSTOM_MODEL_DATA, net.minecraft.world.item.component.CustomModelData(level))
         }
 
         fun displayName(type: String): String {

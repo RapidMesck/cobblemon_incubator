@@ -123,10 +123,12 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
         fuseButton.active = canFuse
 
         val hasEgg = menu.eggCount >= 1
-        naturePrevButton.visible = hasEgg
-        natureNextButton.visible = hasEgg
-        abilityPrevButton.visible = hasEgg
-        abilityNextButton.visible = hasEgg
+        val natureOptions = if (hasEgg) menu.availableNatures() else emptyList()
+        val abilityOptions = if (hasEgg) menu.availableAbilities() else emptyList()
+        naturePrevButton.visible = natureOptions.size > 1
+        natureNextButton.visible = natureOptions.size > 1
+        abilityPrevButton.visible = abilityOptions.size > 1
+        abilityNextButton.visible = abilityOptions.size > 1
     }
 
     override fun renderBg(guiGraphics: GuiGraphics, partialTick: Float, mouseX: Int, mouseY: Int) {
