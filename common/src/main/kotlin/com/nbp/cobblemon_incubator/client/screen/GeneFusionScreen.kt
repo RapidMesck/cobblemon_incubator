@@ -109,6 +109,11 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
     }
 
     override fun render(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
+        menu.blockPos?.let { pos ->
+            val blockEntity = Minecraft.getInstance().level?.getBlockEntity(pos) as? GeneFusionBlockEntity
+            menu.clientEggPropertiesOverride = blockEntity?.clientEggPropertiesList()
+        }
+
         renderBackground(guiGraphics, mouseX, mouseY, partialTick)
         super.render(guiGraphics, mouseX, mouseY, partialTick)
         renderTooltip(guiGraphics, mouseX, mouseY)
@@ -269,9 +274,9 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
     }
 
     private fun eggTypes(): List<String>? {
-        val stack = menu.container.getItem(GeneFusionBlockEntity.SLOT_EGG_START)
-        val props = CobbreedingCompat.extractProperties(stack) ?: return null
-        val speciesId = props.species ?: return null
+        val props = menu.clientEggPropertiesOverride?.firstOrNull()
+            ?: CobbreedingCompat.extractProperties(menu.container.getItem(GeneFusionBlockEntity.SLOT_EGG_START))
+        val speciesId = props?.species ?: return null
         val species = PokemonSpecies.species.firstOrNull {
             it.resourceIdentifier.toString().equals(speciesId, ignoreCase = true) ||
                     it.resourceIdentifier.path.equals(speciesId.substringAfter(':'), ignoreCase = true)
@@ -357,8 +362,8 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
     }
 
     private fun eggProperties(): PokemonProperties? {
-        val stack = menu.container.getItem(0)
-        return CobbreedingCompat.extractProperties(stack)
+        return menu.clientEggPropertiesOverride?.firstOrNull()
+            ?: CobbreedingCompat.extractProperties(menu.container.getItem(0))
     }
 
     private fun displayName(value: String?): String {

@@ -16,6 +16,9 @@ import net.minecraft.core.HolderLookup
 import net.minecraft.core.NonNullList
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.chat.Component
+import net.minecraft.network.protocol.Packet
+import net.minecraft.network.protocol.game.ClientGamePacketListener
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
 import net.minecraft.world.ContainerHelper
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.entity.player.Player
@@ -45,24 +48,19 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
             blockEntity.tickServer(level, pos, state)
         }
 
-        fun natureOptions(eggs: List<ItemStack>): List<String> {
-            return eggs.mapNotNull { CobbreedingCompat.extractProperties(it)?.nature }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .sorted()
+        fun natureOptions(properties: List<PokemonProperties?>): List<String> {
+            return properties.filterNotNull().mapNotNull { it.nature }
+                .filter { it.isNotBlank() }.distinct().sorted()
         }
 
-        fun abilityOptions(eggs: List<ItemStack>): List<String> {
-            return eggs.mapNotNull { CobbreedingCompat.extractProperties(it)?.ability }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .sorted()
+        fun abilityOptions(properties: List<PokemonProperties?>): List<String> {
+            return properties.filterNotNull().mapNotNull { it.ability }
+                .filter { it.isNotBlank() }.distinct().sorted()
         }
 
-        fun bestIvs(eggs: List<ItemStack>): IVs? {
-            val allProperties = eggs.mapNotNull { CobbreedingCompat.extractProperties(it) }
+        fun bestIvs(properties: List<PokemonProperties?>): IVs? {
+            val allProperties = properties.filterNotNull()
             if (allProperties.isEmpty()) return null
-
             val result = IVs()
             STATS_ORDER.forEach { stat ->
                 result[stat] = allProperties.maxOf { it.ivs?.getOrDefault(stat) ?: 0 }
@@ -75,6 +73,7 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
     private var selectedNature = ""
     private var selectedAbility = ""
     private var openers = 0
+    private var syncedEggProperties: Array<String> = Array(6) { "" }
 
     private val dataAccess = object : ContainerData {
         override fun get(index: Int): Int {
@@ -125,6 +124,7 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
         ContainerHelper.loadAllItems(tag, items, registries)
         selectedNature = tag.getString("SelectedNature")
         selectedAbility = tag.getString("SelectedAbility")
+        for (i in syncedEggProperties.indices) syncedEggProperties[i] = tag.getString("EggProp$i")
     }
 
     override fun saveAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
@@ -132,6 +132,7 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
         ContainerHelper.saveAllItems(tag, items, registries)
         tag.putString("SelectedNature", selectedNature)
         tag.putString("SelectedAbility", selectedAbility)
+        syncedEggProperties.forEachIndexed { i, value -> tag.putString("EggProp$i", value) }
     }
 
     override fun canPlaceItem(slot: Int, stack: ItemStack): Boolean {
@@ -156,6 +157,7 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     private fun tickServer(level: Level, pos: BlockPos, state: BlockState) {
+        refreshSyncedEggProperties()
         updateBlockState()
     }
 
@@ -195,10 +197,11 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
         return 1
     }
 
-    fun availableNatures(): List<String> = natureOptions(eggItems())
+    fun availableNatures(): List<String> = natureOptions(eggItems().map { CobbreedingCompat.extractProperties(it) })
 
-    fun availableAbilities(): List<String> = abilityOptions(eggItems())
+    fun availableAbilities(): List<String> = abilityOptions(eggItems().map { CobbreedingCompat.extractProperties(it) })
 
+    fun computeBestIvs(): IVs? = bestIvs(eggItems().map { CobbreedingCompat.extractProperties(it) })
     fun getSelectedNature(): String = selectedNature
     fun getSelectedAbility(): String = selectedAbility
 
@@ -211,8 +214,6 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
         selectedAbility = ability
         setChanged()
     }
-
-    fun computeBestIvs(): IVs? = bestIvs(eggItems())
 
     fun getPreviewIvs(): IVs? = computeBestIvs()
 
@@ -264,6 +265,35 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
         setChanged()
         return true
     }
+
+    private fun refreshSyncedEggProperties() {
+        val level = level ?: return
+        if (level.isClientSide) return
+
+        var changed = false
+        for (i in SLOT_EGG_START..SLOT_EGG_END) {
+            val resolved = CobbreedingCompat.extractProperties(items[i])?.asString(" ") ?: ""
+            if (syncedEggProperties[i] != resolved) {
+                syncedEggProperties[i] = resolved
+                changed = true
+            }
+        }
+        if (changed) level.sendBlockUpdated(worldPosition, blockState, blockState, 2)
+    }
+
+    fun clientEggPropertiesList(): List<PokemonProperties?> {
+        return syncedEggProperties.map {
+            if (it.isBlank()) null else runCatching { PokemonProperties.parse(it) }.getOrNull()
+        }
+    }
+
+    override fun getUpdateTag(registries: HolderLookup.Provider): CompoundTag {
+        val tag = super.getUpdateTag(registries)
+        syncedEggProperties.forEachIndexed { i, value -> tag.putString("EggProp$i", value) }
+        return tag
+    }
+
+    override fun getUpdatePacket(): Packet<ClientGamePacketListener> = ClientboundBlockEntityDataPacket.create(this)
 
     private fun updateBlockState() {
         val level = level ?: return

@@ -1,5 +1,6 @@
 package com.nbp.cobblemon_incubator.blockentity
 
+import com.cobblemon.mod.common.api.pokemon.PokemonProperties
 import com.cobblemon.mod.common.block.PastureBlock
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity
 import com.nbp.cobblemon_incubator.block.EggIncubatorBlock
@@ -15,6 +16,9 @@ import net.minecraft.core.HolderLookup
 import net.minecraft.core.NonNullList
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.chat.Component
+import net.minecraft.network.protocol.Packet
+import net.minecraft.network.protocol.game.ClientGamePacketListener
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.Container
 import net.minecraft.world.ContainerHelper
@@ -48,6 +52,7 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
     private var items: NonNullList<ItemStack> = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY)
     private var cachedTimer = 0
     private var cachedMaxTimer = 0
+    private var syncedEggProperties: String = ""
     private var openers = 0
 
     private val dataAccess = object : ContainerData {
@@ -107,6 +112,7 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         ContainerHelper.loadAllItems(tag, items, registries)
         cachedTimer = tag.getInt("CachedTimer")
         cachedMaxTimer = tag.getInt("CachedMaxTimer")
+        syncedEggProperties = tag.getString("SyncedEggProperties")
     }
 
     override fun saveAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
@@ -114,12 +120,14 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         ContainerHelper.saveAllItems(tag, items, registries)
         tag.putInt("CachedTimer", cachedTimer)
         tag.putInt("CachedMaxTimer", cachedMaxTimer)
+        tag.putString("SyncedEggProperties", syncedEggProperties)
     }
 
     override fun setItem(slot: Int, stack: ItemStack) {
         super.setItem(slot, stack)
         if (slot == SLOT_INPUT) {
             cachedMaxTimer = CobbreedingCompat.getTimer(stack) ?: cachedMaxTimer
+            refreshSyncedEggProperties()
             updateBlockState()
         }
     }
@@ -134,6 +142,7 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     private fun tickServer(level: Level, pos: BlockPos, state: BlockState) {
+        refreshSyncedEggProperties()
         updateBlockState()
         if (IncubatorConfig.autoOutputToInventories) {
             pushOutputToAdjacentInventory(level, pos)
@@ -238,7 +247,7 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
     ): Boolean {
         if (!destination.canPlaceItem(slot, stack)) return false
         return destination !is WorldlyContainer ||
-            destination.canPlaceItemThroughFace(slot, stack, insertionFace)
+                destination.canPlaceItemThroughFace(slot, stack, insertionFace)
     }
 
     private fun pullEggFromAdjacentPasture(level: Level, pos: BlockPos): Boolean {
@@ -344,8 +353,8 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
 
     private fun isUpgrade(stack: ItemStack): Boolean {
         return (IncubatorConfig.speedUpgradeEnabled && stack.`is`(ModRegistries.SPEED_UPGRADE.get())) ||
-            (IncubatorConfig.pcUpgradeEnabled && stack.`is`(ModRegistries.PC_UPGRADE.get())) ||
-            (IncubatorConfig.filterUpgradeEnabled && stack.`is`(ModRegistries.FILTER_UPGRADE.get()))
+                (IncubatorConfig.pcUpgradeEnabled && stack.`is`(ModRegistries.PC_UPGRADE.get())) ||
+                (IncubatorConfig.filterUpgradeEnabled && stack.`is`(ModRegistries.FILTER_UPGRADE.get()))
     }
 
     private fun passesFilter(egg: ItemStack): Boolean {
@@ -368,6 +377,7 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
                 updateBlockState()
                 setChanged()
             }
+
             RejectAction.OUTPUT -> {
                 if (items[SLOT_OUTPUT].isEmpty) {
                     items[SLOT_OUTPUT] = egg.copy()
@@ -381,6 +391,31 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         }
         level.updateNeighbourForOutputSignal(worldPosition, blockState.block)
     }
+
+    private fun refreshSyncedEggProperties() {
+        val level = level ?: return
+        if (level.isClientSide) return
+
+        val resolved = CobbreedingCompat.extractProperties(items[SLOT_INPUT])?.asString(" ") ?: ""
+        if (resolved != syncedEggProperties) {
+            syncedEggProperties = resolved
+            level.sendBlockUpdated(worldPosition, blockState, blockState, 2)
+        }
+    }
+
+    /** Usado apenas no lado cliente, populado via getUpdateTag/loadAdditional. */
+    fun clientEggProperties(): PokemonProperties? {
+        if (syncedEggProperties.isBlank()) return null
+        return runCatching { PokemonProperties.parse(syncedEggProperties) }.getOrNull()
+    }
+
+    override fun getUpdateTag(registries: HolderLookup.Provider): CompoundTag {
+        val tag = super.getUpdateTag(registries)
+        tag.putString("SyncedEggProperties", syncedEggProperties)
+        return tag
+    }
+
+    override fun getUpdatePacket(): Packet<ClientGamePacketListener> = ClientboundBlockEntityDataPacket.create(this)
 
     private fun updateBlockState() {
         val level = level ?: return

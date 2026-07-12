@@ -1,5 +1,6 @@
 package com.nbp.cobblemon_incubator.menu
 
+import com.cobblemon.mod.common.api.pokemon.PokemonProperties
 import com.nbp.cobblemon_incubator.blockentity.GeneFusionBlockEntity
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import com.nbp.cobblemon_incubator.util.CobbreedingCompat
@@ -79,9 +80,15 @@ class GeneFusionMenu : AbstractContainerMenu {
     private fun eggItems(): List<ItemStack> =
         (GeneFusionBlockEntity.SLOT_EGG_START..GeneFusionBlockEntity.SLOT_EGG_END).map { container.getItem(it) }
 
-    fun availableNatures(): List<String> = GeneFusionBlockEntity.natureOptions(eggItems())
-    fun availableAbilities(): List<String> = GeneFusionBlockEntity.abilityOptions(eggItems())
-    fun previewIvs() = GeneFusionBlockEntity.bestIvs(eggItems())
+    /** Setado pelo GeneFusionScreen a cada frame com os dados já resolvidos no servidor. */
+    var clientEggPropertiesOverride: List<PokemonProperties?>? = null
+
+    private fun eggPropertiesList(): List<PokemonProperties?> =
+        clientEggPropertiesOverride ?: eggItems().map { CobbreedingCompat.extractProperties(it) }
+
+    fun availableNatures(): List<String> = GeneFusionBlockEntity.natureOptions(eggPropertiesList())
+    fun availableAbilities(): List<String> = GeneFusionBlockEntity.abilityOptions(eggPropertiesList())
+    fun previewIvs() = GeneFusionBlockEntity.bestIvs(eggPropertiesList())
 
     fun getSelectedNature(): String = availableNatures().getOrNull(selectedNatureIndex) ?: ""
     fun getSelectedAbility(): String = availableAbilities().getOrNull(selectedAbilityIndex) ?: ""

@@ -17,6 +17,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat
 import com.mojang.blaze3d.vertex.Tesselator
 import com.mojang.blaze3d.vertex.VertexFormat
 import com.nbp.cobblemon_incubator.CobblemonIncubator
+import com.nbp.cobblemon_incubator.blockentity.EggIncubatorBlockEntity
 import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
 import com.nbp.cobblemon_incubator.util.CobbreedingCompat
 import com.nbp.cobblemon_incubator.util.FilterConfig
@@ -219,9 +220,27 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     }
 
     private fun renderFilterSearchFrames(guiGraphics: GuiGraphics) {
-        if (speciesSearch.visible) drawSearchFrame(guiGraphics, speciesSearch.x, speciesSearch.y, speciesSearch.width, speciesSearch.height)
-        if (natureSearch.visible) drawSearchFrame(guiGraphics, natureSearch.x, natureSearch.y, natureSearch.width, natureSearch.height)
-        if (abilitySearch.visible) drawSearchFrame(guiGraphics, abilitySearch.x, abilitySearch.y, abilitySearch.width, abilitySearch.height)
+        if (speciesSearch.visible) drawSearchFrame(
+            guiGraphics,
+            speciesSearch.x,
+            speciesSearch.y,
+            speciesSearch.width,
+            speciesSearch.height
+        )
+        if (natureSearch.visible) drawSearchFrame(
+            guiGraphics,
+            natureSearch.x,
+            natureSearch.y,
+            natureSearch.width,
+            natureSearch.height
+        )
+        if (abilitySearch.visible) drawSearchFrame(
+            guiGraphics,
+            abilitySearch.x,
+            abilitySearch.y,
+            abilitySearch.width,
+            abilitySearch.height
+        )
     }
 
     private fun drawSearchFrame(guiGraphics: GuiGraphics, x: Int, y: Int, width: Int, height: Int) {
@@ -241,11 +260,23 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         }
         if (menu.showNature) {
             drawSmallText(guiGraphics, Component.literal("Nature"), 38.5F, 98F, centered = true)
-            drawSmallText(guiGraphics, Component.literal(displayName(properties.nature).fit(13)), 38.5F, 105F, centered = true)
+            drawSmallText(
+                guiGraphics,
+                Component.literal(displayName(properties.nature).fit(13)),
+                38.5F,
+                105F,
+                centered = true
+            )
         }
         if (menu.showAbility) {
             drawSmallText(guiGraphics, Component.literal("Ability"), 38.5F, 115F, centered = true)
-            drawSmallText(guiGraphics, Component.literal(displayName(properties.ability).fit(13)), 38.5F, 122F, centered = true)
+            drawSmallText(
+                guiGraphics,
+                Component.literal(displayName(properties.ability).fit(13)),
+                38.5F,
+                122F,
+                centered = true
+            )
         }
 
         if (menu.showIvs) {
@@ -301,7 +332,12 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         }
     }
 
-    private fun eggProperties(): PokemonProperties? = CobbreedingCompat.extractProperties(menu.inputStack)
+    private fun eggProperties(): PokemonProperties? {
+        val pos = menu.blockPos ?: return null
+        val blockEntity = Minecraft.getInstance().level?.getBlockEntity(pos) as? EggIncubatorBlockEntity
+            ?: return null
+        return blockEntity.clientEggProperties()
+    }
 
     private fun renderIvChart(guiGraphics: GuiGraphics, ivs: com.cobblemon.mod.common.pokemon.IVs) {
         val centerX = 40.4F
@@ -338,8 +374,21 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             Vec2(centerX - 24F, centerY - 7F)
         )
         values.forEachIndexed { index, value ->
-            drawTinyText(guiGraphics, Component.literal(chartStats[index].first), positions[index].x, positions[index].y - 5F, centered = true, colour = 0xD8D8D8)
-            drawTinyText(guiGraphics, Component.literal(value), positions[index].x, positions[index].y + 1F, centered = true)
+            drawTinyText(
+                guiGraphics,
+                Component.literal(chartStats[index].first),
+                positions[index].x,
+                positions[index].y - 5F,
+                centered = true,
+                colour = 0xD8D8D8
+            )
+            drawTinyText(
+                guiGraphics,
+                Component.literal(value),
+                positions[index].x,
+                positions[index].y + 1F,
+                centered = true
+            )
         }
     }
 
@@ -419,16 +468,21 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         if (!selectAllowed(openSelect)) openSelect = OpenSelect.NONE
         val normalMode = openSelect == OpenSelect.NONE
         clearButton.message = Component.literal("Clear")
-        speciesButton.message = Component.literal("Species: ${(config.species?.let(::displayName) ?: "Use Egg")}".fit(14))
+        speciesButton.message =
+            Component.literal("Species: ${(config.species?.let(::displayName) ?: "Use Egg")}".fit(14))
         natureSelectButton.message = Component.literal("Nature: ${displayName(config.nature)}".fit(14))
         abilitySelectButton.message = Component.literal("Ability: ${displayName(config.ability)}".fit(14))
         rejectButton.message = Component.literal(if (config.rejectAction.id == "output") "Output" else "Delete")
 
         clearButton.visible = hasFilter && normalMode
-        rejectButton.visible = hasFilter && normalMode && menu.rejectActionFilterEnabled && menu.deleteRejectActionEnabled
-        speciesButton.visible = hasFilter && menu.speciesFilterEnabled && (normalMode || openSelect == OpenSelect.SPECIES)
-        natureSelectButton.visible = hasFilter && menu.natureFilterEnabled && (normalMode || openSelect == OpenSelect.NATURE)
-        abilitySelectButton.visible = hasFilter && menu.abilityFilterEnabled && (normalMode || openSelect == OpenSelect.ABILITY)
+        rejectButton.visible =
+            hasFilter && normalMode && menu.rejectActionFilterEnabled && menu.deleteRejectActionEnabled
+        speciesButton.visible =
+            hasFilter && menu.speciesFilterEnabled && (normalMode || openSelect == OpenSelect.SPECIES)
+        natureSelectButton.visible =
+            hasFilter && menu.natureFilterEnabled && (normalMode || openSelect == OpenSelect.NATURE)
+        abilitySelectButton.visible =
+            hasFilter && menu.abilityFilterEnabled && (normalMode || openSelect == OpenSelect.ABILITY)
         speciesButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.SPECIES) 31 else 50)
         natureSelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.NATURE) 31 else 69)
         abilitySelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.ABILITY) 31 else 88)
@@ -451,7 +505,8 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         val speciesOptions = speciesOptions()
         speciesButtons.forEachIndexed { index, button ->
             val option = speciesOptions.getOrNull(index)
-            button.visible = hasFilter && menu.speciesFilterEnabled && openSelect == OpenSelect.SPECIES && option != null
+            button.visible =
+                hasFilter && menu.speciesFilterEnabled && openSelect == OpenSelect.SPECIES && option != null
             button.message = Component.literal(option?.label?.fit(14) ?: "")
         }
 
@@ -465,7 +520,8 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         val abilityOptions = abilityOptions()
         abilityButtons.forEachIndexed { index, button ->
             val option = abilityOptions.getOrNull(index)
-            button.visible = hasFilter && menu.abilityFilterEnabled && openSelect == OpenSelect.ABILITY && option != null
+            button.visible =
+                hasFilter && menu.abilityFilterEnabled && openSelect == OpenSelect.ABILITY && option != null
             button.message = Component.literal(option?.label?.fit(14) ?: "")
         }
 
@@ -514,7 +570,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         val selectedSpecies = menu.filterConfig.species?.let { id ->
             PokemonSpecies.species.firstOrNull {
                 it.resourceIdentifier.toString().equals(id, ignoreCase = true) ||
-                    it.resourceIdentifier.path.equals(id.substringAfter(':'), ignoreCase = true)
+                        it.resourceIdentifier.path.equals(id.substringAfter(':'), ignoreCase = true)
             }
         }
         val abilities = selectedSpecies?.abilities
