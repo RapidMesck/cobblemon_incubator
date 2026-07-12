@@ -11,7 +11,6 @@
     "S": { "item": "cobblemon:rare_candy" }
   },
   "result": {
-    "id": "cobblemon_incubator:stem_cell_syringe",
-    "count": 1
+    "id": "cobblemon_incubator:stem_cell_syringe"
   }
 }

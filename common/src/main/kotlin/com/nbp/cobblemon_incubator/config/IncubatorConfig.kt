@@ -19,6 +19,7 @@ object IncubatorConfig {
     const val UPGRADE_SPEED = 1 shl 0
     const val UPGRADE_PC = 1 shl 1
     const val UPGRADE_FILTER = 1 shl 2
+    const val UPGRADE_ANALYSE = 1 shl 3
     const val FILTER_SPECIES = 1 shl 0
     const val FILTER_NATURE = 1 shl 1
     const val FILTER_ABILITY = 1 shl 2
@@ -51,7 +52,8 @@ object IncubatorConfig {
     private data class UpgradeOptions(
         var speed: Boolean = true,
         var pc: Boolean = true,
-        var filter: Boolean = true
+        var filter: Boolean = true,
+        var analyse: Boolean = true
     )
 
     private data class FilterOptions(
@@ -113,6 +115,9 @@ object IncubatorConfig {
     val filterUpgradeEnabled: Boolean
         get() = values.upgrades?.filter ?: true
 
+    val analyseUpgradeEnabled: Boolean
+        get() = values.upgrades?.analyse ?: true
+
     val speciesFilterEnabled: Boolean
         get() = values.filters?.species ?: true
 
@@ -162,7 +167,8 @@ object IncubatorConfig {
         get() = maskOf(
             UPGRADE_SPEED to speedUpgradeEnabled,
             UPGRADE_PC to pcUpgradeEnabled,
-            UPGRADE_FILTER to filterUpgradeEnabled
+            UPGRADE_FILTER to filterUpgradeEnabled,
+            UPGRADE_ANALYSE to analyseUpgradeEnabled
         )
 
     val filterMask: Int

@@ -254,7 +254,8 @@ class EggIncubatorMenu : AbstractContainerMenu {
             fun isUpgrade(stack: ItemStack): Boolean {
                 return (IncubatorConfig.speedUpgradeEnabled && stack.`is`(ModRegistries.SPEED_UPGRADE.get())) ||
                         (IncubatorConfig.pcUpgradeEnabled && stack.`is`(ModRegistries.PC_UPGRADE.get())) ||
-                        (IncubatorConfig.filterUpgradeEnabled && stack.`is`(ModRegistries.FILTER_UPGRADE.get()))
+                        (IncubatorConfig.filterUpgradeEnabled && stack.`is`(ModRegistries.FILTER_UPGRADE.get())) ||
+                        (IncubatorConfig.analyseUpgradeEnabled && stack.`is`(ModRegistries.ANALYSE_UPGRADE.get()))
             }
         }
     }

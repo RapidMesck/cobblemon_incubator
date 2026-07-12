@@ -43,7 +43,6 @@ class StemCellSyringeItem(properties: Properties) : Item(properties) {
             if (added <= 0) return 0
             charges[type] = current + added
             setCharges(stack, charges)
-            updateCustomModelData(stack, charges)
             return added
         }
 
@@ -56,9 +55,7 @@ class StemCellSyringeItem(properties: Properties) : Item(properties) {
             for (type in types) {
                 charges[type] = (charges[type] ?: 0) - amount
             }
-            val filtered = charges.filterValues { it > 0 }
-            setCharges(stack, filtered)
-            updateCustomModelData(stack, filtered)
+            setCharges(stack, charges.filterValues { it > 0 })
             return true
         }
 

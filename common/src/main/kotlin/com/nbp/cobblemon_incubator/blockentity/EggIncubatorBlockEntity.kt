@@ -4,6 +4,7 @@ import com.cobblemon.mod.common.api.pokemon.PokemonProperties
 import com.cobblemon.mod.common.block.PastureBlock
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity
 import com.nbp.cobblemon_incubator.block.EggIncubatorBlock
+import com.nbp.cobblemon_incubator.blockentity.GeneFusionBlockEntity
 import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
 import com.nbp.cobblemon_incubator.registry.ModRegistries
@@ -136,7 +137,15 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         return when (slot) {
             SLOT_INPUT -> CobbreedingCompat.isEgg(stack)
             SLOT_OUTPUT -> false
-            in SLOT_UPGRADE_START..SLOT_UPGRADE_END -> isUpgrade(stack)
+            in SLOT_UPGRADE_START..SLOT_UPGRADE_END -> {
+                if (!isUpgrade(stack)) return false
+                if (stack.`is`(ModRegistries.SPEED_UPGRADE.get())) {
+                    (SLOT_UPGRADE_START..SLOT_UPGRADE_END).none { i ->
+                        i != slot && items[i].`is`(ModRegistries.SPEED_UPGRADE.get())
+                    }
+                } else true
+            }
+
             else -> false
         }
     }
@@ -161,18 +170,28 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         }
 
         val timer = CobbreedingCompat.getTimer(egg) ?: return
+        if (cachedMaxTimer <= 0 || timer > cachedMaxTimer) cachedMaxTimer = timer
+        cachedTimer = timer
+        updateBlockState()
+
+        // Handle filter: reject eggs that don't match
         if (!passesFilter(egg)) {
             if (IncubatorConfig.ignoreFilterOnShiny && isEggShiny(egg)) {
-                // Shiny eggs bypass the filter — keep incubating
+                // Shiny eggs bypass the filter
             } else {
                 rejectEgg(level)
                 return
             }
         }
 
-        if (cachedMaxTimer <= 0 || timer > cachedMaxTimer) cachedMaxTimer = timer
-        cachedTimer = timer
-        updateBlockState()
+        // Analyse upgrade: disables incubation, turns incubator into analyzer
+        if (hasAnalyseUpgrade()) {
+            // If filter upgrade is also present, route passed eggs to adjacent gene fusion
+            if (hasUpgrade(ModRegistries.FILTER_UPGRADE.get())) {
+                pushEggToAdjacentGeneFusion(level, pos)
+            }
+            return
+        }
 
         if (timer <= 0) {
             finishEgg(level)
@@ -355,10 +374,38 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         return false
     }
 
+    private fun hasAnalyseUpgrade(): Boolean {
+        return IncubatorConfig.analyseUpgradeEnabled && hasUpgrade(ModRegistries.ANALYSE_UPGRADE.get())
+    }
+
+    private fun pushEggToAdjacentGeneFusion(level: Level, pos: BlockPos) {
+        val egg = items[SLOT_INPUT]
+        if (egg.isEmpty) return
+
+        for (direction in Direction.entries) {
+            val adjacentPos = pos.relative(direction)
+            val geneFusion = level.getBlockEntity(adjacentPos) as? GeneFusionBlockEntity ?: continue
+
+            val targetSlot = (GeneFusionBlockEntity.SLOT_EGG_START..GeneFusionBlockEntity.SLOT_EGG_END)
+                .firstOrNull { geneFusion.getItem(it).isEmpty }
+                ?: continue
+
+            geneFusion.setItem(targetSlot, egg.copy())
+            items[SLOT_INPUT] = ItemStack.EMPTY
+            cachedTimer = 0
+            cachedMaxTimer = 0
+            updateBlockState()
+            setChanged()
+            geneFusion.setChanged()
+            return
+        }
+    }
+
     private fun isUpgrade(stack: ItemStack): Boolean {
         return (IncubatorConfig.speedUpgradeEnabled && stack.`is`(ModRegistries.SPEED_UPGRADE.get())) ||
                 (IncubatorConfig.pcUpgradeEnabled && stack.`is`(ModRegistries.PC_UPGRADE.get())) ||
-                (IncubatorConfig.filterUpgradeEnabled && stack.`is`(ModRegistries.FILTER_UPGRADE.get()))
+                (IncubatorConfig.filterUpgradeEnabled && stack.`is`(ModRegistries.FILTER_UPGRADE.get())) ||
+                (IncubatorConfig.analyseUpgradeEnabled && stack.`is`(ModRegistries.ANALYSE_UPGRADE.get()))
     }
 
     private fun isEggShiny(egg: ItemStack): Boolean {

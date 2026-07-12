@@ -7,6 +7,7 @@ import com.nbp.cobblemon_incubator.block.GeneFusionBlock
 import com.nbp.cobblemon_incubator.blockentity.EggIncubatorBlockEntity
 import com.nbp.cobblemon_incubator.blockentity.GeneFusionBlockEntity
 import com.nbp.cobblemon_incubator.config.IncubatorConfig
+import com.nbp.cobblemon_incubator.item.AnalyseUpgradeItem
 import com.nbp.cobblemon_incubator.item.BreedingScannerItem
 import com.nbp.cobblemon_incubator.item.FilterUpgradeItem
 import com.nbp.cobblemon_incubator.item.PcUpgradeItem
@@ -14,6 +15,7 @@ import com.nbp.cobblemon_incubator.item.SpeedUpgradeItem
 import com.nbp.cobblemon_incubator.item.StemCellSyringeItem
 import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
 import com.nbp.cobblemon_incubator.menu.GeneFusionMenu
+import com.nbp.cobblemon_incubator.recipe.SyringeMergeRecipe
 import dev.architectury.registry.CreativeTabRegistry
 import dev.architectury.registry.menu.MenuRegistry
 import dev.architectury.registry.registries.DeferredRegister
@@ -29,6 +31,8 @@ import net.minecraft.world.item.CreativeModeTab
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.TooltipFlag
+import net.minecraft.world.item.crafting.RecipeSerializer
+import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.SoundType
 import net.minecraft.world.level.block.entity.BlockEntityType
@@ -45,6 +49,8 @@ object ModRegistries {
         DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.CREATIVE_MODE_TAB)
     private val DATA_COMPONENT_TYPES: DeferredRegister<DataComponentType<*>> =
         DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.DATA_COMPONENT_TYPE)
+    private val RECIPE_SERIALIZERS: DeferredRegister<RecipeSerializer<*>> =
+        DeferredRegister.create(CobblemonIncubator.MOD_ID, Registries.RECIPE_SERIALIZER)
 
     val EGG_INCUBATOR: RegistrySupplier<EggIncubatorBlock> = BLOCKS.register("egg_incubator") {
         EggIncubatorBlock(
@@ -70,6 +76,10 @@ object ModRegistries {
 
     val FILTER_UPGRADE: RegistrySupplier<Item> = ITEMS.register("filter_upgrade") {
         FilterUpgradeItem(Item.Properties().stacksTo(1))
+    }
+
+    val ANALYSE_UPGRADE: RegistrySupplier<Item> = ITEMS.register("analyse_upgrade") {
+        AnalyseUpgradeItem(Item.Properties().stacksTo(16))
     }
 
     val BREEDING_SCANNER: RegistrySupplier<Item> = ITEMS.register("breeding_scanner") {
@@ -120,6 +130,7 @@ object ModRegistries {
                     output.accept(SPEED_UPGRADE.get())
                     output.accept(PC_UPGRADE.get())
                     output.accept(FILTER_UPGRADE.get())
+                    output.accept(ANALYSE_UPGRADE.get())
                     output.accept(BREEDING_SCANNER.get())
                     output.accept(STEM_CELL_SYRINGE.get())
                 }
@@ -148,6 +159,11 @@ object ModRegistries {
             .build()
     }
 
+    val SYRINGE_MERGE_RECIPE_SERIALIZER: RegistrySupplier<RecipeSerializer<SyringeMergeRecipe>> =
+        RECIPE_SERIALIZERS.register("syringe_merge") {
+            SimpleCraftingRecipeSerializer(::SyringeMergeRecipe)
+        }
+
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     val EGG_INCUBATOR_BLOCK_ENTITY: RegistrySupplier<BlockEntityType<EggIncubatorBlockEntity>> =
         BLOCK_ENTITY_TYPES.register("egg_incubator") {
@@ -175,5 +191,6 @@ object ModRegistries {
         CREATIVE_MODE_TABS.register()
         BLOCK_ENTITY_TYPES.register()
         MENU_TYPES.register()
+        RECIPE_SERIALIZERS.register()
     }
 }

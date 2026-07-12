@@ -9,6 +9,8 @@
   "item.cobblemon_incubator.pc_upgrade.description": "Envia Pokemon chocados diretamente ao PC vinculado.",
   "item.cobblemon_incubator.filter_upgrade": "Upgrade de Filtro",
   "item.cobblemon_incubator.filter_upgrade.description": "Filtra ovos por especie, Nature, Ability e IVs.",
+  "item.cobblemon_incubator.analyse_upgrade": "Upgrade de Analise",
+  "item.cobblemon_incubator.analyse_upgrade.description": "Desabilita a incubacao. Com Filter Upgrade, envia ovos filtrados para uma Maquina de Fusao Genetica adjacente.",
   "item.cobblemon_incubator.breeding_scanner": "Scanner de Breeding",
   "item.cobblemon_incubator.breeding_scanner.description": "Use em um Pasture Block para prever todos os ovos possiveis do Cobbreeding.",
   "item.cobblemon_incubator.filter_upgrade.empty": "Nenhum criterio de filtro configurado",

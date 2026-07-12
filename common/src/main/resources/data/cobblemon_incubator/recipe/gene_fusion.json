@@ -1,18 +1,19 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "GCG",
-    "CEC",
-    "III"
+    "#=#",
+    "GNG",
+    "I_I"
   ],
   "key": {
-    "G": { "item": "minecraft:glass" },
-    "C": { "item": "minecraft:copper_ingot" },
-    "E": { "item": "cobblemon:up-grade" },
-    "I": { "item": "minecraft:iron_ingot" }
+    "#": {"item": "minecraft:echo_shard"},
+    "=": {"item": "minecraft:netherite_ingot"},
+    "G": {"item": "minecraft:glass_pane"},
+    "N": {"item": "minecraft:nether_star"},
+    "I": {"item": "minecraft:iron_ingot"},
+    "_": {"item": "cobblemon:electirizer"}
   },
   "result": {
-    "id": "cobblemon_incubator:gene_fusion",
-    "count": 1
+    "id": "cobblemon_incubator:gene_fusion"
   }
 }
