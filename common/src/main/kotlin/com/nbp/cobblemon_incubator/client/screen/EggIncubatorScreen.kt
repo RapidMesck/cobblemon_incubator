@@ -497,10 +497,13 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
 
         speciesSearch.visible = hasFilter && menu.speciesFilterEnabled && openSelect == OpenSelect.SPECIES
         speciesSearch.active = speciesSearch.visible
+        if (!speciesSearch.visible) speciesSearch.setFocused(false)
         natureSearch.visible = hasFilter && menu.natureFilterEnabled && openSelect == OpenSelect.NATURE
         natureSearch.active = natureSearch.visible
+        if (!natureSearch.visible) natureSearch.setFocused(false)
         abilitySearch.visible = hasFilter && menu.abilityFilterEnabled && openSelect == OpenSelect.ABILITY
         abilitySearch.active = abilitySearch.visible
+        if (!abilitySearch.visible) abilitySearch.setFocused(false)
 
         val speciesOptions = speciesOptions()
         speciesButtons.forEachIndexed { index, button ->

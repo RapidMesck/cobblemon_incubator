@@ -32,6 +32,7 @@ object IncubatorConfig {
     private data class Values(
         var baseSpeed: Int = 5,
         var speedUpgradeMultiplier: Double = 2.0,
+        var ignoreFilterOnShiny: Boolean = true,
         var display: DisplayOptions? = DisplayOptions(),
         var upgrades: UpgradeOptions? = UpgradeOptions(),
         var filters: FilterOptions? = FilterOptions(),
@@ -81,6 +82,9 @@ object IncubatorConfig {
 
     val speedUpgradeMultiplier: Double
         get() = values.speedUpgradeMultiplier
+
+    val ignoreFilterOnShiny: Boolean
+        get() = values.ignoreFilterOnShiny
 
     val upgradedSpeed: Int
         get() = (baseSpeed * speedUpgradeMultiplier).roundToInt().coerceAtLeast(1)

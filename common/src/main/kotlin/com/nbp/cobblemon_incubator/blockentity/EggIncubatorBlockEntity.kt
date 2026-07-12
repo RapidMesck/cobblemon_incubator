@@ -162,8 +162,12 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
 
         val timer = CobbreedingCompat.getTimer(egg) ?: return
         if (!passesFilter(egg)) {
-            rejectEgg(level)
-            return
+            if (IncubatorConfig.ignoreFilterOnShiny && isEggShiny(egg)) {
+                // Shiny eggs bypass the filter — keep incubating
+            } else {
+                rejectEgg(level)
+                return
+            }
         }
 
         if (cachedMaxTimer <= 0 || timer > cachedMaxTimer) cachedMaxTimer = timer
@@ -355,6 +359,10 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         return (IncubatorConfig.speedUpgradeEnabled && stack.`is`(ModRegistries.SPEED_UPGRADE.get())) ||
                 (IncubatorConfig.pcUpgradeEnabled && stack.`is`(ModRegistries.PC_UPGRADE.get())) ||
                 (IncubatorConfig.filterUpgradeEnabled && stack.`is`(ModRegistries.FILTER_UPGRADE.get()))
+    }
+
+    private fun isEggShiny(egg: ItemStack): Boolean {
+        return CobbreedingCompat.extractProperties(egg)?.shiny == true
     }
 
     private fun passesFilter(egg: ItemStack): Boolean {
