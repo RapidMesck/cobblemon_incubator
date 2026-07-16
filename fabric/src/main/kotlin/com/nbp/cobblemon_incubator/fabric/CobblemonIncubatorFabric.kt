@@ -5,6 +5,7 @@ import net.fabricmc.api.ModInitializer
 
 class CobblemonIncubatorFabric : ModInitializer {
     override fun onInitialize() {
+        FabricItemTransferHelper.register()
         CobblemonIncubator.init()
     }
 }

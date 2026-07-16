@@ -10,6 +10,7 @@ import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import com.nbp.cobblemon_incubator.util.CobbreedingCompat
 import com.nbp.cobblemon_incubator.util.FilterConfig
+import com.nbp.cobblemon_incubator.util.PlatformHelper
 import com.nbp.cobblemon_incubator.util.RejectAction
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
@@ -216,7 +217,22 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
             val adjacentPos = pos.relative(direction)
             if (level.getBlockState(adjacentPos).block is PastureBlock) continue
 
-            val destination = level.getBlockEntity(adjacentPos) as? Container ?: continue
+            val destination = level.getBlockEntity(adjacentPos) as? Container
+            if (destination == null) {
+                val transfer = PlatformHelper.transfer
+                if (transfer != null && transfer.insertItem(level, adjacentPos, direction.opposite, output)) {
+                    if (output.isEmpty) items[SLOT_OUTPUT] = ItemStack.EMPTY
+                    setChanged()
+                    level.sendBlockUpdated(
+                        adjacentPos,
+                        level.getBlockState(adjacentPos),
+                        level.getBlockState(adjacentPos),
+                        3
+                    )
+                    return true
+                }
+                continue
+            }
             val insertionFace = direction.opposite
             val slots = if (destination is WorldlyContainer) {
                 destination.getSlotsForFace(insertionFace)

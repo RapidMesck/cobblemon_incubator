@@ -8,6 +8,7 @@ import net.neoforged.fml.loading.FMLEnvironment
 @Mod(CobblemonIncubator.MOD_ID)
 class CobblemonIncubatorNeoForge {
     init {
+        NeoForgeItemTransferHelper.register()
         CobblemonIncubator.init()
         if (FMLEnvironment.dist == Dist.CLIENT) {
             CobblemonIncubatorNeoForgeClient()
