@@ -39,7 +39,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     AbstractContainerScreen<EggIncubatorMenu>(menu, inventory, title) {
 
     private data class SelectOption(val index: Int, val value: String?, val label: String)
-    private enum class OpenSelect { NONE, SPECIES, NATURE, ABILITY }
+    private enum class OpenSelect { NONE, SPECIES, NATURE, ABILITY, GENDER, MIN_PERFECT_IVS }
 
     private var selectedIvIndex = 0
     private var modelWidget: ModelWidget? = null
@@ -50,11 +50,15 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     private val speciesButtons = mutableListOf<PcTextButton>()
     private val natureButtons = mutableListOf<PcTextButton>()
     private val abilityButtons = mutableListOf<PcTextButton>()
+    private val genderButtons = mutableListOf<PcTextButton>()
+    private val minPerfectIvsButtons = mutableListOf<PcTextButton>()
 
     private lateinit var clearButton: PcTextButton
     private lateinit var speciesButton: PcTextButton
     private lateinit var natureSelectButton: PcTextButton
     private lateinit var abilitySelectButton: PcTextButton
+    private lateinit var genderSelectButton: PcTextButton
+    private lateinit var minPerfectIvsSelectButton: PcTextButton
     private lateinit var rejectButton: PcTextButton
     private lateinit var ivPrevButton: PcTextButton
     private lateinit var ivNextButton: PcTextButton
@@ -90,17 +94,20 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         speciesButtons.clear()
         natureButtons.clear()
         abilityButtons.clear()
+        genderButtons.clear()
+        minPerfectIvsButtons.clear()
 
         val filterX = leftPos + 274
         clearButton = addFilterButton(filterX, topPos + 31, 32, 14, 0)
         rejectButton = addFilterButton(filterX + 35, topPos + 31, 34, 14, 6)
-        speciesButton = addLocalButton(filterX, topPos + 50, 69, 14) {
+
+        speciesButton = addLocalButton(filterX, topPos + 48, 69, 14) {
             openSelect = if (openSelect == OpenSelect.SPECIES) OpenSelect.NONE else OpenSelect.SPECIES
             if (openSelect == OpenSelect.SPECIES) speciesSearch.setFocused(true)
         }
-        speciesSearch = addSearchBox(filterX, topPos + 50, "Species")
+        speciesSearch = addSearchBox(filterX, topPos + 45, "Species")
         repeat(7) { row ->
-            speciesButtons += addDynamicFilterButton(filterX, topPos + 64 + row * 14, 69, 13) {
+            speciesButtons += addDynamicFilterButton(filterX, topPos + 59 + row * 13, 69, 12) {
                 speciesOptions().getOrNull(row)?.let {
                     openSelect = OpenSelect.NONE
                     speciesSearch.setFocused(false)
@@ -109,13 +116,13 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             }
         }
 
-        natureSelectButton = addLocalButton(filterX, topPos + 69, 69, 14) {
+        natureSelectButton = addLocalButton(filterX, topPos + 65, 69, 14) {
             openSelect = if (openSelect == OpenSelect.NATURE) OpenSelect.NONE else OpenSelect.NATURE
             if (openSelect == OpenSelect.NATURE) natureSearch.setFocused(true)
         }
-        natureSearch = addSearchBox(filterX, topPos + 50, "Nature")
+        natureSearch = addSearchBox(filterX, topPos + 45, "Nature")
         repeat(7) { row ->
-            natureButtons += addDynamicFilterButton(filterX, topPos + 64 + row * 14, 69, 13) {
+            natureButtons += addDynamicFilterButton(filterX, topPos + 59 + row * 13, 69, 12) {
                 natureOptions().getOrNull(row)?.let {
                     openSelect = OpenSelect.NONE
                     natureSearch.setFocused(false)
@@ -124,13 +131,13 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             }
         }
 
-        abilitySelectButton = addLocalButton(filterX, topPos + 88, 69, 14) {
+        abilitySelectButton = addLocalButton(filterX, topPos + 82, 69, 14) {
             openSelect = if (openSelect == OpenSelect.ABILITY) OpenSelect.NONE else OpenSelect.ABILITY
             if (openSelect == OpenSelect.ABILITY) abilitySearch.setFocused(true)
         }
-        abilitySearch = addSearchBox(filterX, topPos + 50, "Ability")
+        abilitySearch = addSearchBox(filterX, topPos + 45, "Ability")
         repeat(7) { row ->
-            abilityButtons += addDynamicFilterButton(filterX, topPos + 64 + row * 14, 69, 13) {
+            abilityButtons += addDynamicFilterButton(filterX, topPos + 59 + row * 13, 69, 12) {
                 abilityOptions().getOrNull(row)?.let {
                     openSelect = OpenSelect.NONE
                     abilitySearch.setFocused(false)
@@ -139,16 +146,40 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             }
         }
 
-        ivPrevButton = addLocalButton(filterX, topPos + 121, 14, 14) {
+        genderSelectButton = addLocalButton(filterX, topPos + 99, 69, 14) {
+            openSelect = if (openSelect == OpenSelect.GENDER) OpenSelect.NONE else OpenSelect.GENDER
+        }
+        repeat(4) { row ->
+            genderButtons += addDynamicFilterButton(filterX, topPos + 59 + row * 13, 69, 12) {
+                genderOptions().getOrNull(row)?.let {
+                    openSelect = OpenSelect.NONE
+                    5000 + it.index
+                } ?: -1
+            }
+        }
+
+        minPerfectIvsSelectButton = addLocalButton(filterX, topPos + 116, 69, 14) {
+            openSelect = if (openSelect == OpenSelect.MIN_PERFECT_IVS) OpenSelect.NONE else OpenSelect.MIN_PERFECT_IVS
+        }
+        repeat(7) { row ->
+            minPerfectIvsButtons += addDynamicFilterButton(filterX, topPos + 59 + row * 13, 69, 12) {
+                minPerfectIvsOptions().getOrNull(row)?.let {
+                    openSelect = OpenSelect.NONE
+                    6000 + it.index
+                } ?: -1
+            }
+        }
+
+        ivPrevButton = addLocalButton(filterX, topPos + 145, 14, 14) {
             selectedIvIndex = Math.floorMod(selectedIvIndex - 1, FilterConfig.STATS.size)
         }
-        ivNextButton = addLocalButton(filterX + 55, topPos + 121, 14, 14) {
+        ivNextButton = addLocalButton(filterX + 55, topPos + 145, 14, 14) {
             selectedIvIndex = Math.floorMod(selectedIvIndex + 1, FilterConfig.STATS.size)
         }
-        ivOperatorButton = addDynamicFilterButton(filterX, topPos + 158, 23, 14) { 100 + selectedIvIndex }
-        ivDownButton = addDynamicFilterButton(filterX + 26, topPos + 158, 14, 14) { 110 + selectedIvIndex }
-        ivUpButton = addDynamicFilterButton(filterX + 43, topPos + 158, 14, 14) { 120 + selectedIvIndex }
-        ivClearButton = addDynamicFilterButton(filterX + 60, topPos + 158, 9, 14) { 130 + selectedIvIndex }
+        ivOperatorButton = addDynamicFilterButton(filterX, topPos + 162, 18, 14) { 100 + selectedIvIndex }
+        ivDownButton = addDynamicFilterButton(filterX + 21, topPos + 162, 14, 14) { 110 + selectedIvIndex }
+        ivUpButton = addDynamicFilterButton(filterX + 38, topPos + 162, 14, 14) { 120 + selectedIvIndex }
+        ivClearButton = addDynamicFilterButton(filterX + 55, topPos + 162, 14, 14) { 130 + selectedIvIndex }
     }
 
     override fun render(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
@@ -298,10 +329,9 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         if (openSelect == OpenSelect.NONE && menu.ivFilterEnabled) {
             val stat = FilterConfig.STATS[selectedIvIndex]
             val rule = menu.filterConfig.ivRules[stat.key]
-            val ruleText = rule?.let { "${it.operator.label} ${it.value}" } ?: "Any"
-            drawSmallText(guiGraphics, Component.literal("IV Filters"), 310F, 109F, centered = true, colour = 0xD8D8D8)
-            drawPcText(guiGraphics, Component.literal(stat.label), 310F, 124F, centered = true)
-            drawSmallText(guiGraphics, Component.literal(ruleText), 310F, 143F, centered = true)
+            val ruleText = rule?.let { "${it.operator.label}${it.value}" } ?: "Any"
+            drawPcText(guiGraphics, Component.literal(stat.label), 310F, 148F, centered = true)
+            drawSmallText(guiGraphics, Component.literal(ruleText), 310F, 138F, centered = true)
         }
     }
 
@@ -472,20 +502,53 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             Component.literal("Species: ${(config.species?.let(::displayName) ?: "Use Egg")}".fit(14))
         natureSelectButton.message = Component.literal("Nature: ${displayName(config.nature)}".fit(14))
         abilitySelectButton.message = Component.literal("Ability: ${displayName(config.ability)}".fit(14))
+        val genderLabel = when (config.gender) {
+            "MALE" -> "MAL"
+            "FEMALE" -> "FEM"
+            "GENDERLESS" -> "GEN"
+            else -> "Any"
+        }
+        genderSelectButton.message = Component.literal("Gender: $genderLabel".fit(14))
+        minPerfectIvsSelectButton.message = Component.literal("Min IVs: ${config.minPerfectIvs ?: 0}".fit(14))
         rejectButton.message = Component.literal(if (config.rejectAction.id == "output") "Output" else "Delete")
+
+        clearButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.clear.tooltip")
+        rejectButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.reject.tooltip")
+        speciesButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.species.tooltip")
+        natureSelectButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.nature.tooltip")
+        abilitySelectButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.ability.tooltip")
+        genderSelectButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.gender.tooltip")
+        minPerfectIvsSelectButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.min_perfect_ivs.tooltip")
+        ivPrevButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.iv_prev.tooltip")
+        ivNextButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.iv_next.tooltip")
+        ivOperatorButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.iv_operator.tooltip")
+        ivDownButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.iv_decrease.tooltip")
+        ivUpButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.iv_increase.tooltip")
+        ivClearButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.iv_clear.tooltip")
 
         clearButton.visible = hasFilter && normalMode
         rejectButton.visible =
             hasFilter && normalMode && menu.rejectActionFilterEnabled && menu.deleteRejectActionEnabled
+
         speciesButton.visible =
             hasFilter && menu.speciesFilterEnabled && (normalMode || openSelect == OpenSelect.SPECIES)
         natureSelectButton.visible =
             hasFilter && menu.natureFilterEnabled && (normalMode || openSelect == OpenSelect.NATURE)
         abilitySelectButton.visible =
             hasFilter && menu.abilityFilterEnabled && (normalMode || openSelect == OpenSelect.ABILITY)
-        speciesButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.SPECIES) 31 else 50)
-        natureSelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.NATURE) 31 else 69)
-        abilitySelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.ABILITY) 31 else 88)
+        genderSelectButton.visible =
+            hasFilter && menu.genderFilterEnabled && (normalMode || openSelect == OpenSelect.GENDER)
+        minPerfectIvsSelectButton.visible =
+            hasFilter && menu.minPerfectIvsFilterEnabled && (normalMode || openSelect == OpenSelect.MIN_PERFECT_IVS)
+
+        speciesButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.SPECIES) 31 else 48)
+        natureSelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.NATURE) 31 else 65)
+        abilitySelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.ABILITY) 31 else 82)
+        genderSelectButton.setPosition(leftPos + 274, topPos + if (openSelect == OpenSelect.GENDER) 31 else 99)
+        minPerfectIvsSelectButton.setPosition(
+            leftPos + 274,
+            topPos + if (openSelect == OpenSelect.MIN_PERFECT_IVS) 31 else 116
+        )
 
         val ivVisible = hasFilter && normalMode && menu.ivFilterEnabled
         ivPrevButton.visible = ivVisible
@@ -528,6 +591,21 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             button.message = Component.literal(option?.label?.fit(14) ?: "")
         }
 
+        val genderOptions = genderOptions()
+        genderButtons.forEachIndexed { index, button ->
+            val option = genderOptions.getOrNull(index)
+            button.visible = hasFilter && menu.genderFilterEnabled && openSelect == OpenSelect.GENDER && option != null
+            button.message = Component.literal(option?.label ?: "")
+        }
+
+        val minPerfectIvsOptions = minPerfectIvsOptions()
+        minPerfectIvsButtons.forEachIndexed { index, button ->
+            val option = minPerfectIvsOptions.getOrNull(index)
+            button.visible =
+                hasFilter && menu.minPerfectIvsFilterEnabled && openSelect == OpenSelect.MIN_PERFECT_IVS && option != null
+            button.message = Component.literal(option?.label ?: "")
+        }
+
         ivPrevButton.message = Component.literal("<")
         ivNextButton.message = Component.literal(">")
         val stat = FilterConfig.STATS[selectedIvIndex]
@@ -540,6 +618,8 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         speciesButton.highlighted = config.species != null
         natureSelectButton.highlighted = config.nature != null
         abilitySelectButton.highlighted = config.ability != null
+        genderSelectButton.highlighted = config.gender != null
+        minPerfectIvsSelectButton.highlighted = config.minPerfectIvs != null
         rejectButton.danger = config.rejectAction.id == "delete"
         ivOperatorButton.highlighted = rule != null
     }
@@ -550,6 +630,8 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             OpenSelect.SPECIES -> menu.speciesFilterEnabled
             OpenSelect.NATURE -> menu.natureFilterEnabled
             OpenSelect.ABILITY -> menu.abilityFilterEnabled
+            OpenSelect.GENDER -> menu.genderFilterEnabled
+            OpenSelect.MIN_PERFECT_IVS -> menu.minPerfectIvsFilterEnabled
         }
     }
 
@@ -567,6 +649,16 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         return values.mapIndexed { index, (value, label) -> SelectOption(index, value, label) }
             .filter { it.matches(speciesSearch.value) }
             .take(7)
+    }
+
+    private fun genderOptions(): List<SelectOption> {
+        val values = listOf<String?>(null, "MALE", "FEMALE", "GENDERLESS")
+        val labels = listOf("Any", "Male", "Female", "Genderless")
+        return values.mapIndexed { index, value -> SelectOption(index, value, labels[index]) }
+    }
+
+    private fun minPerfectIvsOptions(): List<SelectOption> {
+        return listOf(SelectOption(0, null, "None")) + (1..6).map { SelectOption(it, it.toString(), "$it") }
     }
 
     private fun abilityOptions(): List<SelectOption> {
@@ -660,6 +752,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     ) : Button(x, y, width, height, message, onPress, DEFAULT_NARRATION) {
         var highlighted = false
         var danger = false
+        var tooltip: Component? = null
 
         override fun renderWidget(context: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
             val base = when {
@@ -682,6 +775,10 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             val colour = if (active) 0xFFFFFF else 0xBDBDBD
             val textX = x + width / 2 - font.width(message) / 2
             context.drawString(font, message, textX, y + 3, colour, true)
+
+            if (isHovered() && tooltip != null) {
+                context.renderTooltip(Minecraft.getInstance().font, tooltip!!, mouseX, mouseY)
+            }
         }
 
         override fun playDownSound(soundManager: SoundManager) {

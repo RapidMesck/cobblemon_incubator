@@ -146,6 +146,20 @@ object CobbreedingCompat {
             CobblemonEvents.HATCH_EGG_PRE.post(HatchEggEvent.Pre(properties, player))
             val pokemon = properties.create()
             pokemon.setFriendship(120)
+
+            // Ensure form is preserved for datapack forms (e.g. Laser's Fakemon)
+            val desiredForm = properties.form
+            if (desiredForm != null && !desiredForm.equals(pokemon.form.name, ignoreCase = true)) {
+                val resolved = pokemon.species.forms.firstOrNull { form ->
+                    form.formOnlyShowdownId().equals(desiredForm, ignoreCase = true) ||
+                        form.name.equals(desiredForm, ignoreCase = true) ||
+                        form.name.replace(" ", "").equals(desiredForm.replace(" ", ""), ignoreCase = true)
+                }
+                if (resolved != null) {
+                    pokemon.form = resolved
+                }
+            }
+
             if (!pc.add(pokemon)) {
                 player.sendSystemMessage(Component.translatable("message.cobblemon_incubator.pc_full"))
                 return@runCatching false

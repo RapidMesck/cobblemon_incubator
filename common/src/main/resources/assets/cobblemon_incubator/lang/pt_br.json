@@ -49,5 +49,18 @@
   "item.cobblemon_incubator.gene_fusion.disabled": "Fusao Genetica esta desabilitada na configuracao do servidor.",
   "command.cobblemon_incubator.fillsyringe.all": "Preencheu todas as seringas com %s celulas de todos os tipos.",
   "command.cobblemon_incubator.fillsyringe.type": "Preencheu seringas com %s celulas do tipo '%s'.",
-  "command.cobblemon_incubator.fillsyringe.no_syringe": "Nenhuma Seringa de Celulas Tronco encontrada no seu inventario."
+  "command.cobblemon_incubator.fillsyringe.no_syringe": "Nenhuma Seringa de Celulas Tronco encontrada no seu inventario.",
+  "gui.cobblemon_incubator.filter.clear.tooltip": "Limpar todos os criterios de filtro",
+  "gui.cobblemon_incubator.filter.reject.tooltip": "Acao para ovos rejeitados:\nSaida = colocar no slot de saida\nDeletar = destruir o ovo",
+  "gui.cobblemon_incubator.filter.species.tooltip": "Filtrar ovos por especie de Pokemon.\n'Usar Ovo' le do ovo no slot de entrada.",
+  "gui.cobblemon_incubator.filter.nature.tooltip": "Filtrar ovos por Nature.\nAfeta o crescimento dos stats.",
+  "gui.cobblemon_incubator.filter.ability.tooltip": "Filtrar ovos por Ability.",
+  "gui.cobblemon_incubator.filter.gender.tooltip": "Filtrar ovos por Genero.\nAlgumas especies possuem variantes de genero.",
+  "gui.cobblemon_incubator.filter.min_perfect_ivs.tooltip": "Numero minimo de IVs perfeitos (31).\nDefina como Nenhum para desativar.",
+  "gui.cobblemon_incubator.filter.iv_prev.tooltip": "Stat IV anterior",
+  "gui.cobblemon_incubator.filter.iv_next.tooltip": "Proximo stat IV",
+  "gui.cobblemon_incubator.filter.iv_operator.tooltip": "Operador de comparacao:\n>= pelo menos\n<= no maximo\n= exatamente",
+  "gui.cobblemon_incubator.filter.iv_decrease.tooltip": "Diminuir valor do IV",
+  "gui.cobblemon_incubator.filter.iv_increase.tooltip": "Aumentar valor do IV",
+  "gui.cobblemon_incubator.filter.iv_clear.tooltip": "Remover esta regra de IV"
 }

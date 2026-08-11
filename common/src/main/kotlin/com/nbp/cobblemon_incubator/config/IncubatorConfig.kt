@@ -26,6 +26,8 @@ object IncubatorConfig {
     const val FILTER_IVS = 1 shl 3
     const val FILTER_REJECT_ACTION = 1 shl 4
     const val FILTER_DELETE_REJECT_ACTION = 1 shl 5
+    const val FILTER_GENDER = 1 shl 6
+    const val FILTER_MIN_PERFECT_IVS = 1 shl 7
     const val AUTOMATION_INPUT = 1 shl 0
     const val AUTOMATION_OUTPUT = 1 shl 1
     private val gson = GsonBuilder().setPrettyPrinting().create()
@@ -60,7 +62,9 @@ object IncubatorConfig {
         var species: Boolean = true,
         var nature: Boolean = true,
         var ability: Boolean = true,
+        var gender: Boolean = true,
         var ivs: Boolean = true,
+        var minPerfectIvs: Boolean = true,
         var rejectAction: Boolean = true,
         var deleteRejectedEggs: Boolean = true
     )
@@ -130,6 +134,12 @@ object IncubatorConfig {
     val ivFilterEnabled: Boolean
         get() = values.filters?.ivs ?: true
 
+    val genderFilterEnabled: Boolean
+        get() = values.filters?.gender ?: true
+
+    val minPerfectIvsFilterEnabled: Boolean
+        get() = values.filters?.minPerfectIvs ?: true
+
     val rejectActionFilterEnabled: Boolean
         get() = values.filters?.rejectAction ?: true
 
@@ -176,7 +186,9 @@ object IncubatorConfig {
             FILTER_SPECIES to speciesFilterEnabled,
             FILTER_NATURE to natureFilterEnabled,
             FILTER_ABILITY to abilityFilterEnabled,
+            FILTER_GENDER to genderFilterEnabled,
             FILTER_IVS to ivFilterEnabled,
+            FILTER_MIN_PERFECT_IVS to minPerfectIvsFilterEnabled,
             FILTER_REJECT_ACTION to rejectActionFilterEnabled,
             FILTER_DELETE_REJECT_ACTION to deleteRejectedEggsEnabled
         )

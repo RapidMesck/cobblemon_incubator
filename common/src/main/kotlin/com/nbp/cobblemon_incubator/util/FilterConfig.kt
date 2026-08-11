@@ -14,6 +14,8 @@ data class FilterConfig(
     val species: String? = null,
     val nature: String? = null,
     val ability: String? = null,
+    val gender: String? = null,
+    val minPerfectIvs: Int? = null,
     val ivRules: Map<String, IvRule> = emptyMap(),
     val rejectAction: RejectAction = RejectAction.OUTPUT
 ) {
@@ -58,6 +60,8 @@ data class FilterConfig(
                 species = values["species"]?.takeIf { it.isNotBlank() },
                 nature = values["nature"]?.takeIf { it.isNotBlank() },
                 ability = values["ability"]?.takeIf { it.isNotBlank() },
+                gender = values["gender"]?.takeIf { it.isNotBlank() },
+                minPerfectIvs = values["min_perfect_ivs"]?.toIntOrNull()?.coerceIn(0, 31),
                 ivRules = rules,
                 rejectAction = values["reject"]?.let { RejectAction.byId(it) } ?: RejectAction.OUTPUT
             )
@@ -69,6 +73,8 @@ data class FilterConfig(
             species?.let { add("species=$it") }
             nature?.let { add("nature=$it") }
             ability?.let { add("ability=$it") }
+            gender?.let { add("gender=$it") }
+            minPerfectIvs?.let { add("min_perfect_ivs=$it") }
             add("reject=${rejectAction.id}")
             for ((key, rule) in ivRules) {
                 add("iv_$key=${rule.operator.id}:${rule.value}")
@@ -77,7 +83,7 @@ data class FilterConfig(
     }
 
     fun hasCriteria(): Boolean {
-        return species != null || nature != null || ability != null || ivRules.isNotEmpty()
+        return species != null || nature != null || ability != null || gender != null || minPerfectIvs != null || ivRules.isNotEmpty()
     }
 
     fun enabledOnly(): FilterConfig {
@@ -85,6 +91,8 @@ data class FilterConfig(
             species = species.takeIf { IncubatorConfig.speciesFilterEnabled },
             nature = nature.takeIf { IncubatorConfig.natureFilterEnabled },
             ability = ability.takeIf { IncubatorConfig.abilityFilterEnabled },
+            gender = gender.takeIf { IncubatorConfig.genderFilterEnabled },
+            minPerfectIvs = minPerfectIvs.takeIf { IncubatorConfig.minPerfectIvsFilterEnabled },
             ivRules = if (IncubatorConfig.ivFilterEnabled) ivRules else emptyMap(),
             rejectAction = if (
                 !IncubatorConfig.rejectActionFilterEnabled ||
@@ -101,6 +109,13 @@ data class FilterConfig(
         if (species != null && normalize(properties.species) != normalize(species)) return false
         if (nature != null && normalize(properties.nature) != normalize(nature)) return false
         if (ability != null && normalize(properties.ability) != normalize(ability)) return false
+        if (gender != null && properties.gender?.name?.equals(gender, ignoreCase = true) != true) return false
+
+        if (minPerfectIvs != null) {
+            val ivs = properties.ivs ?: return false
+            val perfectCount = STATS.count { ivs.getOrDefault(it.stat) == 31 }
+            if (perfectCount < minPerfectIvs) return false
+        }
 
         if (ivRules.isNotEmpty()) {
             val ivs = properties.ivs ?: return false
@@ -148,6 +163,28 @@ data class FilterConfig(
 
     fun cycleRejectAction(): FilterConfig = copy(rejectAction = rejectAction.next())
 
+    fun cycleGender(delta: Int): FilterConfig {
+        val options = genderOptions()
+        return copy(gender = cycleOption(options, gender, delta))
+    }
+
+    fun setGenderByIndex(index: Int): FilterConfig {
+        val options = genderOptions()
+        return copy(gender = options.getOrNull(index))
+    }
+
+    fun adjustMinPerfectIvs(delta: Int): FilterConfig {
+        val current = minPerfectIvs ?: 0
+        return copy(minPerfectIvs = (current + delta).coerceIn(0, 31)).let {
+            if (it.minPerfectIvs == 0) it.copy(minPerfectIvs = null) else it
+        }
+    }
+
+    fun setMinPerfectIvsByIndex(index: Int): FilterConfig {
+        val options = minPerfectIvsOptions()
+        return copy(minPerfectIvs = options.getOrNull(index))
+    }
+
     fun cycleIvOperator(statIndex: Int): FilterConfig {
         val stat = STATS.getOrNull(statIndex) ?: return this
         val current = ivRules[stat.key] ?: IvRule(IvOperator.GREATER_OR_EQUAL, 31)
@@ -170,6 +207,8 @@ data class FilterConfig(
         species?.let { parts.add("Species $it") }
         nature?.let { parts.add("Nature $it") }
         ability?.let { parts.add("Ability $it") }
+        gender?.let { parts.add("Gender $it") }
+        minPerfectIvs?.let { parts.add("Min $it perfect IVs") }
         if (ivRules.isNotEmpty()) {
             parts.add(
                 ivRules.entries.joinToString(" ") { (key, rule) ->
@@ -207,6 +246,10 @@ data class FilterConfig(
             ?: Abilities.all().map { it.name }.sorted()
         return listOf<String?>(null) + abilities
     }
+
+    private fun genderOptions(): List<String?> = listOf(null, "MALE", "FEMALE", "GENDERLESS")
+
+    private fun minPerfectIvsOptions(): List<Int?> = listOf(null, 1, 2, 3, 4, 5, 6)
 
     private fun normalize(value: String?): String? {
         return value

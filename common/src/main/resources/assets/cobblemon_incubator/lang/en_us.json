@@ -49,5 +49,18 @@
   "item.cobblemon_incubator.gene_fusion.disabled": "Gene Fusion is disabled in the server config.",
   "command.cobblemon_incubator.fillsyringe.all": "Filled all syringes with %s cells of every type.",
   "command.cobblemon_incubator.fillsyringe.type": "Filled syringes with %s cells of type '%s'.",
-  "command.cobblemon_incubator.fillsyringe.no_syringe": "No Stem Cell Syringe found in your inventory."
+  "command.cobblemon_incubator.fillsyringe.no_syringe": "No Stem Cell Syringe found in your inventory.",
+  "gui.cobblemon_incubator.filter.clear.tooltip": "Clear all filter criteria",
+  "gui.cobblemon_incubator.filter.reject.tooltip": "Action for rejected eggs:\nOutput = place in output slot\nDelete = destroy the egg",
+  "gui.cobblemon_incubator.filter.species.tooltip": "Filter eggs by Pokemon species.\n'Use Egg' reads from the egg in the input slot.",
+  "gui.cobblemon_incubator.filter.nature.tooltip": "Filter eggs by Nature.\nAffects stat growth.",
+  "gui.cobblemon_incubator.filter.ability.tooltip": "Filter eggs by Ability.",
+  "gui.cobblemon_incubator.filter.gender.tooltip": "Filter eggs by Gender.\nSome species have gender variants.",
+  "gui.cobblemon_incubator.filter.min_perfect_ivs.tooltip": "Minimum number of perfect (31) IVs.\nSet to None to disable.",
+  "gui.cobblemon_incubator.filter.iv_prev.tooltip": "Previous IV stat",
+  "gui.cobblemon_incubator.filter.iv_next.tooltip": "Next IV stat",
+  "gui.cobblemon_incubator.filter.iv_operator.tooltip": "Comparison operator:\n>= at least\n<= at most\n= exactly",
+  "gui.cobblemon_incubator.filter.iv_decrease.tooltip": "Decrease IV value",
+  "gui.cobblemon_incubator.filter.iv_increase.tooltip": "Increase IV value",
+  "gui.cobblemon_incubator.filter.iv_clear.tooltip": "Remove this IV rule"
 }

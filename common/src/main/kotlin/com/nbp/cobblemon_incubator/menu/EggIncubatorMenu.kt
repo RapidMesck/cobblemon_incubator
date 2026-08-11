@@ -118,6 +118,12 @@ class EggIncubatorMenu : AbstractContainerMenu {
     val ivFilterEnabled: Boolean
         get() = IncubatorConfig.enabled(filterMask, IncubatorConfig.FILTER_IVS)
 
+    val genderFilterEnabled: Boolean
+        get() = IncubatorConfig.enabled(filterMask, IncubatorConfig.FILTER_GENDER)
+
+    val minPerfectIvsFilterEnabled: Boolean
+        get() = IncubatorConfig.enabled(filterMask, IncubatorConfig.FILTER_MIN_PERFECT_IVS)
+
     val rejectActionFilterEnabled: Boolean
         get() = IncubatorConfig.enabled(filterMask, IncubatorConfig.FILTER_REJECT_ACTION)
 
@@ -162,7 +168,9 @@ class EggIncubatorMenu : AbstractContainerMenu {
             in 130..135 -> current.clearIv(id - 130)
             in 2000..2099 -> current.setNatureByIndex(id - 2000)
             in 3000..3999 -> current.setAbilityByIndex(id - 3000)
-            in 4000..9999 -> current.setSpeciesByIndex(id - 4000)
+            in 4000..4999 -> current.setSpeciesByIndex(id - 4000)
+            in 5000..5999 -> current.setGenderByIndex(id - 5000)
+            in 6000..6999 -> current.setMinPerfectIvsByIndex(id - 6000)
             else -> return false
         }.enabledOnly()
         FilterConfig.save(filter, next)
@@ -234,7 +242,9 @@ class EggIncubatorMenu : AbstractContainerMenu {
             in 100..135 -> ivFilterEnabled
             in 2000..2099 -> natureFilterEnabled
             in 3000..3999 -> abilityFilterEnabled
-            in 4000..9999 -> speciesFilterEnabled
+            in 4000..4999 -> speciesFilterEnabled
+            in 5000..5999 -> genderFilterEnabled
+            in 6000..6999 -> minPerfectIvsFilterEnabled
             else -> false
         }
     }

@@ -295,8 +295,16 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         for (direction in Direction.entries) {
             val adjacentPos = pos.relative(direction)
             val adjacentState = level.getBlockState(adjacentPos)
-            val pastureBlock = adjacentState.block as? PastureBlock ?: continue
-            val pasturePos = pastureBlock.getBasePosition(adjacentState, adjacentPos)
+
+            // Support both Cobblemon's PastureBlock and Virtual Loot's VirtualPastureBlock
+            // by resolving the base position from either the block or the block entity.
+            val pasturePos = when {
+                adjacentState.block is PastureBlock -> {
+                    val pastureBlock = adjacentState.block as PastureBlock
+                    pastureBlock.getBasePosition(adjacentState, adjacentPos)
+                }
+                else -> adjacentPos
+            }
             if (!visitedPastures.add(pasturePos)) continue
 
             val pastureEntity = level.getBlockEntity(pasturePos) as? PokemonPastureBlockEntity ?: continue
