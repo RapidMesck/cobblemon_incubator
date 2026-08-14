@@ -16,6 +16,7 @@ object IncubatorConfig {
     const val DISPLAY_NATURE = 1 shl 2
     const val DISPLAY_ABILITY = 1 shl 3
     const val DISPLAY_IVS = 1 shl 4
+    const val DISPLAY_GENDER = 1 shl 5
     const val UPGRADE_SPEED = 1 shl 0
     const val UPGRADE_PC = 1 shl 1
     const val UPGRADE_FILTER = 1 shl 2
@@ -48,7 +49,8 @@ object IncubatorConfig {
         var species: Boolean = true,
         var nature: Boolean = true,
         var ability: Boolean = true,
-        var ivs: Boolean = true
+        var ivs: Boolean = true,
+        var gender: Boolean = true
     )
 
     private data class UpgradeOptions(
@@ -110,6 +112,9 @@ object IncubatorConfig {
     val displayIvs: Boolean
         get() = values.display?.ivs ?: true
 
+    val displayGender: Boolean
+        get() = values.display?.gender ?: true
+
     val speedUpgradeEnabled: Boolean
         get() = values.upgrades?.speed ?: true
 
@@ -170,7 +175,8 @@ object IncubatorConfig {
             DISPLAY_SPECIES to displaySpecies,
             DISPLAY_NATURE to displayNature,
             DISPLAY_ABILITY to displayAbility,
-            DISPLAY_IVS to displayIvs
+            DISPLAY_IVS to displayIvs,
+            DISPLAY_GENDER to displayGender
         )
 
     val upgradeMask: Int

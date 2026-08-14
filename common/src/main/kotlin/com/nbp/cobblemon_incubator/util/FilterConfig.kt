@@ -8,6 +8,7 @@ import com.cobblemon.mod.common.api.pokemon.stats.Stat
 import com.cobblemon.mod.common.api.pokemon.stats.Stats
 import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.registry.ModRegistries
+import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
 
 data class FilterConfig(
@@ -109,7 +110,7 @@ data class FilterConfig(
         if (species != null && normalize(properties.species) != normalize(species)) return false
         if (nature != null && normalize(properties.nature) != normalize(nature)) return false
         if (ability != null && normalize(properties.ability) != normalize(ability)) return false
-        if (gender != null && properties.gender?.name?.equals(gender, ignoreCase = true) != true) return false
+        if (gender != null && CobbreedingCompat.resolveGenderName(properties)?.equals(gender, ignoreCase = true) != true) return false
 
         if (minPerfectIvs != null) {
             val ivs = properties.ivs ?: return false
@@ -202,22 +203,26 @@ data class FilterConfig(
         return copy(ivRules = ivRules - stat.key)
     }
 
-    fun summary(): String {
-        val parts = mutableListOf<String>()
-        species?.let { parts.add("Species $it") }
-        nature?.let { parts.add("Nature $it") }
-        ability?.let { parts.add("Ability $it") }
-        gender?.let { parts.add("Gender $it") }
-        minPerfectIvs?.let { parts.add("Min $it perfect IVs") }
+    fun summaryComponents(): List<Component> {
+        val parts = mutableListOf<Component>()
+        species?.let { parts.add(Component.translatable("item.cobblemon_incubator.filter_upgrade.summary.species", it)) }
+        nature?.let { parts.add(Component.translatable("item.cobblemon_incubator.filter_upgrade.summary.nature", it)) }
+        ability?.let { parts.add(Component.translatable("item.cobblemon_incubator.filter_upgrade.summary.ability", it)) }
+        gender?.let { parts.add(Component.translatable("item.cobblemon_incubator.filter_upgrade.summary.gender", it)) }
+        minPerfectIvs?.let {
+            parts.add(Component.translatable("item.cobblemon_incubator.filter_upgrade.summary.min_perfect_ivs", it))
+        }
         if (ivRules.isNotEmpty()) {
             parts.add(
-                ivRules.entries.joinToString(" ") { (key, rule) ->
-                    val label = STATS.firstOrNull { it.key == key }?.label ?: key
-                    "$label ${rule.operator.label}${rule.value}"
-                }
+                Component.literal(
+                    ivRules.entries.joinToString(" ") { (key, rule) ->
+                        val label = STATS.firstOrNull { it.key == key }?.label ?: key
+                        "$label ${rule.operator.label}${rule.value}"
+                    }
+                )
             )
         }
-        return parts.joinToString(" | ")
+        return parts
     }
 
     private fun <T> cycleOption(options: List<T>, current: T, delta: Int): T {
@@ -285,9 +290,11 @@ enum class IvOperator(val id: String, val label: String) {
     }
 }
 
-enum class RejectAction(val id: String, val label: String) {
-    OUTPUT("output", "Output"),
-    DELETE("delete", "Delete");
+enum class RejectAction(val id: String, val translationKey: String) {
+    OUTPUT("output", "gui.cobblemon_incubator.filter.reject.output"),
+    DELETE("delete", "gui.cobblemon_incubator.filter.reject.delete");
+
+    fun component(): Component = Component.translatable(translationKey)
 
     fun next(): RejectAction = entries[(ordinal + 1) % entries.size]
 

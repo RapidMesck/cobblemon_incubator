@@ -106,6 +106,9 @@ class EggIncubatorMenu : AbstractContainerMenu {
     val showIvs: Boolean
         get() = IncubatorConfig.enabled(displayMask, IncubatorConfig.DISPLAY_IVS)
 
+    val showGender: Boolean
+        get() = IncubatorConfig.enabled(displayMask, IncubatorConfig.DISPLAY_GENDER)
+
     val speciesFilterEnabled: Boolean
         get() = IncubatorConfig.enabled(filterMask, IncubatorConfig.FILTER_SPECIES)
 

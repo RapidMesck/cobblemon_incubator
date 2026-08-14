@@ -6,6 +6,7 @@ import com.cobblemon.mod.common.api.events.pokemon.HatchEggEvent
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies
 import com.cobblemon.mod.common.api.pokemon.stats.Stats
+import com.cobblemon.mod.common.pokemon.Gender
 import com.nbp.cobblemon_incubator.CobblemonIncubator
 import net.minecraft.ChatFormatting
 import net.minecraft.core.registries.BuiltInRegistries
@@ -16,6 +17,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 import java.lang.reflect.Method
 import java.util.UUID
+import kotlin.random.Random
 
 object CobbreedingCompat {
     private val timerId = ResourceLocation.fromNamespaceAndPath("cobbreeding", "timer")
@@ -77,13 +79,40 @@ object CobbreedingCompat {
         stack.set(component as net.minecraft.core.component.DataComponentType<Int>, timer.coerceAtLeast(0))
     }
 
+    private fun findSpecies(speciesId: String) = PokemonSpecies.species.firstOrNull {
+        it.resourceIdentifier.toString().equals(speciesId, ignoreCase = true) ||
+            it.resourceIdentifier.path.equals(speciesId.substringAfter(':'), ignoreCase = true)
+    }
+
+    /**
+     * Cobbreeding does not roll the egg's gender until it actually hatches, so eggs sitting in the
+     * incubator have no gender to show. We roll it ourselves from the species' gender ratio using a
+     * seed derived from the egg's own fixed data (species/form/nature/ability/ivs/moves), so repeated
+     * calls for the same egg always agree, and lock it onto [properties] so the eventual hatch matches.
+     */
+    fun resolveGender(properties: PokemonProperties): Gender? {
+        properties.gender?.let { return it }
+        val rolled = rollGender(properties) ?: return null
+        properties.gender = rolled
+        return rolled
+    }
+
+    fun resolveGenderName(properties: PokemonProperties): String? = resolveGender(properties)?.name
+
+    private fun rollGender(properties: PokemonProperties): Gender? {
+        val speciesId = properties.species ?: return null
+        val species = findSpecies(speciesId) ?: return null
+        val possible = species.possibleGenders
+        if (possible.size <= 1) return possible.firstOrNull()
+        if (Gender.GENDERLESS in possible) return Gender.GENDERLESS
+        val seed = properties.asString(" ").hashCode().toLong()
+        return if (Random(seed).nextFloat() < species.maleRatio) Gender.MALE else Gender.FEMALE
+    }
+
     fun getSpeciesDisplayName(stack: ItemStack): Component {
         val properties = extractProperties(stack)
-        val speciesId = properties?.species ?: return Component.literal("Pokemon")
-        val species = PokemonSpecies.species.firstOrNull {
-            it.resourceIdentifier.toString().equals(speciesId, ignoreCase = true) ||
-                it.resourceIdentifier.path.equals(speciesId.substringAfter(':'), ignoreCase = true)
-        }
+        val speciesId = properties?.species ?: return Component.translatable("tooltip.cobblemon_incubator.unknown_pokemon")
+        val species = findSpecies(speciesId)
         val name = species?.translatedName ?: Component.literal(displayName(speciesId))
         val tooltip = buildPokemonTooltip(properties)
         return name.copy().withStyle { style ->
@@ -95,8 +124,8 @@ object CobbreedingCompat {
     }
 
     private fun buildPokemonTooltip(properties: PokemonProperties): Component {
-        val nature = displayName(properties.nature)
-        val ability = displayName(properties.ability)
+        val nature = nameComponent(properties.nature)
+        val ability = nameComponent(properties.ability)
         val ivs = properties.ivs
 
         return Component.empty()
@@ -131,6 +160,17 @@ object CobbreedingCompat {
             }
     }
 
+    private fun nameComponent(value: String?): Component {
+        val clean = value?.substringAfter(':')?.substringAfterLast('/')
+        if (clean.isNullOrBlank()) return Component.translatable("gui.cobblemon_incubator.value.any")
+        val formatted = clean.split('-', '_', ' ')
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { word ->
+                word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            }
+        return Component.literal(formatted)
+    }
+
     fun hatchToPc(player: ServerPlayer, ownerUuid: UUID, egg: ItemStack): Boolean {
         val properties = extractProperties(egg) ?: return false
         val species = properties.species ?: return false
@@ -143,6 +183,7 @@ object CobbreedingCompat {
                 return@runCatching false
             }
 
+            resolveGender(properties)
             CobblemonEvents.HATCH_EGG_PRE.post(HatchEggEvent.Pre(properties, player))
             val pokemon = properties.create()
             pokemon.setFriendship(120)
@@ -170,21 +211,6 @@ object CobbreedingCompat {
         }.onFailure {
             CobblemonIncubator.logger.error("Falha ao chocar ovo para o PC", it)
         }.getOrDefault(false)
-    }
-
-    fun summarize(stack: ItemStack): List<String> {
-        val properties = extractProperties(stack) ?: return listOf("No egg data")
-        val ivs = properties.ivs?.toString()
-        return buildList {
-            add("Species: ${properties.species ?: "Unknown"}")
-            properties.form?.let { add("Form: $it") }
-            properties.nature?.let { add("Nature: $it") }
-            properties.ability?.let { add("Ability: $it") }
-            properties.gender?.let { add("Gender: $it") }
-            properties.shiny?.let { add("Shiny: $it") }
-            if (ivs != null) add("IVs: $ivs")
-            properties.moves?.takeIf { it.isNotEmpty() }?.let { add("Moves: ${it.joinToString()}") }
-        }
     }
 
     fun createFusedEgg(properties: PokemonProperties, timer: Int): ItemStack? {

@@ -123,7 +123,14 @@ class StemCellSyringeItem(properties: Properties) : Item(properties) {
                     else -> ChatFormatting.RED
                 }
                 tooltipComponents.add(
-                    Component.literal("  ${displayName(type)}: $charge / $max").withStyle(color)
+                    Component.literal("  ").append(
+                        Component.translatable(
+                            "item.cobblemon_incubator.stem_cell_syringe.charge_line",
+                            displayName(type),
+                            charge,
+                            max
+                        )
+                    ).withStyle(color)
                 )
             }
         }

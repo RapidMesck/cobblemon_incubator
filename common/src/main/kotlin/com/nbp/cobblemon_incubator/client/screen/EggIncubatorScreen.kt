@@ -26,8 +26,10 @@ import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
+import net.minecraft.client.resources.language.I18n
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.client.sounds.SoundManager
+import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.player.Inventory
@@ -105,7 +107,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             openSelect = if (openSelect == OpenSelect.SPECIES) OpenSelect.NONE else OpenSelect.SPECIES
             if (openSelect == OpenSelect.SPECIES) speciesSearch.setFocused(true)
         }
-        speciesSearch = addSearchBox(filterX, topPos + 45, "Species")
+        speciesSearch = addSearchBox(filterX, topPos + 45, "gui.cobblemon_incubator.label.species")
         repeat(7) { row ->
             speciesButtons += addDynamicFilterButton(filterX, topPos + 59 + row * 13, 69, 12) {
                 speciesOptions().getOrNull(row)?.let {
@@ -120,7 +122,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             openSelect = if (openSelect == OpenSelect.NATURE) OpenSelect.NONE else OpenSelect.NATURE
             if (openSelect == OpenSelect.NATURE) natureSearch.setFocused(true)
         }
-        natureSearch = addSearchBox(filterX, topPos + 45, "Nature")
+        natureSearch = addSearchBox(filterX, topPos + 45, "gui.cobblemon_incubator.label.nature")
         repeat(7) { row ->
             natureButtons += addDynamicFilterButton(filterX, topPos + 59 + row * 13, 69, 12) {
                 natureOptions().getOrNull(row)?.let {
@@ -135,7 +137,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             openSelect = if (openSelect == OpenSelect.ABILITY) OpenSelect.NONE else OpenSelect.ABILITY
             if (openSelect == OpenSelect.ABILITY) abilitySearch.setFocused(true)
         }
-        abilitySearch = addSearchBox(filterX, topPos + 45, "Ability")
+        abilitySearch = addSearchBox(filterX, topPos + 45, "gui.cobblemon_incubator.label.ability")
         repeat(7) { row ->
             abilityButtons += addDynamicFilterButton(filterX, topPos + 59 + row * 13, 69, 12) {
                 abilityOptions().getOrNull(row)?.let {
@@ -223,7 +225,14 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
 
     override fun renderLabels(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
         drawPcText(guiGraphics, title, 172.5F, 12F, centered = true, shadow = true)
-        drawPcText(guiGraphics, Component.literal("Filter"), 283.5F, 12F, centered = true, shadow = true)
+        drawPcText(
+            guiGraphics,
+            Component.translatable("gui.cobblemon_incubator.filter.title"),
+            283.5F,
+            12F,
+            centered = true,
+            shadow = true
+        )
         drawPcText(guiGraphics, playerInventoryTitle, 172F, 111F, centered = true, shadow = true)
 
         renderEggInfo(guiGraphics)
@@ -282,15 +291,23 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     private fun renderEggInfo(guiGraphics: GuiGraphics) {
         val properties = eggProperties()
         if (properties == null) {
-            drawPcText(guiGraphics, Component.literal("No Egg"), 5F, 12F, shadow = true)
+            drawPcText(guiGraphics, Component.translatable("gui.cobblemon_incubator.no_egg"), 5F, 12F, shadow = true)
             return
         }
 
-        if (menu.showSpecies) {
-            drawPcText(guiGraphics, Component.literal(displayName(properties.species).fit(14)), 5F, 12F, shadow = true)
+        if (menu.showSpecies || menu.showGender) {
+            val nameText = Component.empty()
+            if (menu.showSpecies) nameText.append(displayName(properties.species).fit(14))
+            if (menu.showGender) {
+                genderSymbol(CobbreedingCompat.resolveGenderName(properties))?.let {
+                    if (menu.showSpecies) nameText.append(" ")
+                    nameText.append(it)
+                }
+            }
+            drawPcText(guiGraphics, nameText, 5F, 12F, shadow = true)
         }
         if (menu.showNature) {
-            drawSmallText(guiGraphics, Component.literal("Nature"), 38.5F, 98F, centered = true)
+            drawSmallText(guiGraphics, Component.translatable("gui.cobblemon_incubator.label.nature"), 38.5F, 98F, centered = true)
             drawSmallText(
                 guiGraphics,
                 Component.literal(displayName(properties.nature).fit(13)),
@@ -300,7 +317,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             )
         }
         if (menu.showAbility) {
-            drawSmallText(guiGraphics, Component.literal("Ability"), 38.5F, 115F, centered = true)
+            drawSmallText(guiGraphics, Component.translatable("gui.cobblemon_incubator.label.ability"), 38.5F, 115F, centered = true)
             drawSmallText(
                 guiGraphics,
                 Component.literal(displayName(properties.ability).fit(13)),
@@ -315,21 +332,35 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
             if (ivs != null) {
                 renderIvChart(guiGraphics, ivs)
             } else {
-                drawPcText(guiGraphics, Component.literal("IVs unknown"), 40F, 177F, centered = true, colour = 0xB8B8B8)
+                drawPcText(
+                    guiGraphics,
+                    Component.translatable("gui.cobblemon_incubator.ivs_unknown"),
+                    40F,
+                    177F,
+                    centered = true,
+                    colour = 0xB8B8B8
+                )
             }
         }
     }
 
     private fun renderFilterLabels(guiGraphics: GuiGraphics) {
         if (menu.filterStack.isEmpty) {
-            drawPcText(guiGraphics, Component.literal("No upgrade"), 310F, 88F, centered = true, colour = 0xF08888)
+            drawPcText(
+                guiGraphics,
+                Component.translatable("gui.cobblemon_incubator.no_upgrade"),
+                310F,
+                88F,
+                centered = true,
+                colour = 0xF08888
+            )
             return
         }
 
         if (openSelect == OpenSelect.NONE && menu.ivFilterEnabled) {
             val stat = FilterConfig.STATS[selectedIvIndex]
             val rule = menu.filterConfig.ivRules[stat.key]
-            val ruleText = rule?.let { "${it.operator.label}${it.value}" } ?: "Any"
+            val ruleText = rule?.let { "${it.operator.label}${it.value}" } ?: I18n.get("gui.cobblemon_incubator.value.any")
             drawPcText(guiGraphics, Component.literal(stat.label), 310F, 148F, centered = true)
             drawSmallText(guiGraphics, Component.literal(ruleText), 310F, 138F, centered = true)
         }
@@ -463,9 +494,10 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F)
     }
 
-    private fun addSearchBox(x: Int, y: Int, hint: String): EditBox {
-        val box = EditBox(font, x + 3, y + 2, 63, 10, Component.literal(hint))
-        box.setHint(Component.literal("Search $hint"))
+    private fun addSearchBox(x: Int, y: Int, labelKey: String): EditBox {
+        val label = I18n.get(labelKey)
+        val box = EditBox(font, x + 3, y + 2, 63, 10, Component.literal(label))
+        box.setHint(Component.literal(I18n.get("gui.cobblemon_incubator.search_hint", label)))
         box.setMaxLength(32)
         box.setBordered(false)
         return addRenderableWidget(box)
@@ -497,20 +529,32 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         val config = menu.filterConfig
         if (!selectAllowed(openSelect)) openSelect = OpenSelect.NONE
         val normalMode = openSelect == OpenSelect.NONE
-        clearButton.message = Component.literal("Clear")
-        speciesButton.message =
-            Component.literal("Species: ${(config.species?.let(::displayName) ?: "Use Egg")}".fit(14))
-        natureSelectButton.message = Component.literal("Nature: ${displayName(config.nature)}".fit(14))
-        abilitySelectButton.message = Component.literal("Ability: ${displayName(config.ability)}".fit(14))
+        clearButton.message = Component.translatable("gui.cobblemon_incubator.filter.clear")
+        speciesButton.message = Component.literal(
+            I18n.get(
+                "gui.cobblemon_incubator.filter.species.value",
+                config.species?.let(::displayName) ?: I18n.get("gui.cobblemon_incubator.filter.species.use_egg")
+            ).fit(14)
+        )
+        natureSelectButton.message = Component.literal(
+            I18n.get("gui.cobblemon_incubator.filter.nature.value", displayName(config.nature)).fit(14)
+        )
+        abilitySelectButton.message = Component.literal(
+            I18n.get("gui.cobblemon_incubator.filter.ability.value", displayName(config.ability)).fit(14)
+        )
         val genderLabel = when (config.gender) {
-            "MALE" -> "MAL"
-            "FEMALE" -> "FEM"
-            "GENDERLESS" -> "GEN"
-            else -> "Any"
+            "MALE" -> I18n.get("gui.cobblemon_incubator.gender.male_short")
+            "FEMALE" -> I18n.get("gui.cobblemon_incubator.gender.female_short")
+            "GENDERLESS" -> I18n.get("gui.cobblemon_incubator.gender.genderless_short")
+            else -> I18n.get("gui.cobblemon_incubator.value.any")
         }
-        genderSelectButton.message = Component.literal("Gender: $genderLabel".fit(14))
-        minPerfectIvsSelectButton.message = Component.literal("Min IVs: ${config.minPerfectIvs ?: 0}".fit(14))
-        rejectButton.message = Component.literal(if (config.rejectAction.id == "output") "Output" else "Delete")
+        genderSelectButton.message = Component.literal(
+            I18n.get("gui.cobblemon_incubator.filter.gender.value", genderLabel).fit(14)
+        )
+        minPerfectIvsSelectButton.message = Component.literal(
+            I18n.get("gui.cobblemon_incubator.filter.min_perfect_ivs.value", config.minPerfectIvs ?: 0).fit(14)
+        )
+        rejectButton.message = config.rejectAction.component()
 
         clearButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.clear.tooltip")
         rejectButton.tooltip = Component.translatable("gui.cobblemon_incubator.filter.reject.tooltip")
@@ -643,7 +687,7 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
     }
 
     private fun speciesOptions(): List<SelectOption> {
-        val values = listOf<Pair<String?, String>>(null to "Any") + PokemonSpecies.species
+        val values = listOf<Pair<String?, String>>(null to I18n.get("gui.cobblemon_incubator.value.any")) + PokemonSpecies.species
             .sortedBy { it.resourceIdentifier.toString() }
             .map { it.resourceIdentifier.toString() to it.translatedName.string }
         return values.mapIndexed { index, (value, label) -> SelectOption(index, value, label) }
@@ -653,12 +697,18 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
 
     private fun genderOptions(): List<SelectOption> {
         val values = listOf<String?>(null, "MALE", "FEMALE", "GENDERLESS")
-        val labels = listOf("Any", "Male", "Female", "Genderless")
+        val labels = listOf(
+            I18n.get("gui.cobblemon_incubator.value.any"),
+            I18n.get("gui.cobblemon_incubator.gender.male"),
+            I18n.get("gui.cobblemon_incubator.gender.female"),
+            I18n.get("gui.cobblemon_incubator.gender.genderless")
+        )
         return values.mapIndexed { index, value -> SelectOption(index, value, labels[index]) }
     }
 
     private fun minPerfectIvsOptions(): List<SelectOption> {
-        return listOf(SelectOption(0, null, "None")) + (1..6).map { SelectOption(it, it.toString(), "$it") }
+        return listOf(SelectOption(0, null, I18n.get("gui.cobblemon_incubator.value.none"))) +
+            (1..6).map { SelectOption(it, it.toString(), "$it") }
     }
 
     private fun abilityOptions(): List<SelectOption> {
@@ -683,8 +733,16 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
         return search.isBlank() || label.contains(search, ignoreCase = true)
     }
 
+    private fun genderSymbol(genderName: String?): Component? {
+        return when (genderName) {
+            "MALE" -> Component.literal("♂").withStyle(ChatFormatting.BLUE)
+            "FEMALE" -> Component.literal("♀").withStyle(ChatFormatting.LIGHT_PURPLE)
+            else -> null
+        }
+    }
+
     private fun displayName(value: String?): String {
-        val clean = value?.substringAfter(':')?.substringAfterLast('/') ?: return "Any"
+        val clean = value?.substringAfter(':')?.substringAfterLast('/') ?: return I18n.get("gui.cobblemon_incubator.value.any")
         return clean.split('-', '_', ' ')
             .filter { it.isNotBlank() }
             .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } }

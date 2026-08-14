@@ -24,6 +24,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
+import net.minecraft.client.resources.language.I18n
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.client.sounds.SoundManager
 import net.minecraft.network.chat.Component
@@ -171,7 +172,7 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
 
         val properties = eggProperties()
         if (properties == null) {
-            drawPcText(guiGraphics, Component.literal("No Egg"), -33F, 12F, shadow = true)
+            drawPcText(guiGraphics, Component.translatable("gui.cobblemon_incubator.no_egg"), -33F, 12F, shadow = true)
         } else {
             drawPcText(guiGraphics, Component.literal(displayName(properties.species)), -33F, 12F, shadow = true)
         }
@@ -184,7 +185,7 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
         } else if (eggProperties() != null) {
             drawPcText(
                 guiGraphics,
-                Component.literal("IVs unknown"),
+                Component.translatable("gui.cobblemon_incubator.ivs_unknown"),
                 IV_CHART_CENTER_X,
                 IV_CHART_CENTER_Y + 18F,
                 centered = true,
@@ -197,16 +198,16 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
         if (menu.eggCount < 1) return
 
         val selectedNature = menu.getSelectedNature()
-        val natureText = if (selectedNature.isNotEmpty()) displayName(selectedNature) else "Any"
+        val natureText = if (selectedNature.isNotEmpty()) displayName(selectedNature) else I18n.get("gui.cobblemon_incubator.value.any")
         val natureColor =
             if (selectedNature.isNotEmpty() && menu.availableNatures().isNotEmpty()) 0xFFFFFF else 0xB8B8B8
 
         val selectedAbility = menu.getSelectedAbility()
-        val abilityText = if (selectedAbility.isNotEmpty()) displayName(selectedAbility) else "Any"
+        val abilityText = if (selectedAbility.isNotEmpty()) displayName(selectedAbility) else I18n.get("gui.cobblemon_incubator.value.any")
         val abilityColor =
             if (selectedAbility.isNotEmpty() && menu.availableAbilities().isNotEmpty()) 0xFFFFFF else 0xB8B8B8
 
-        drawSmallText(guiGraphics, Component.literal("Nature"), NATURE_TEXT_X, NATURE_LABEL_Y, centered = true)
+        drawSmallText(guiGraphics, Component.translatable("gui.cobblemon_incubator.label.nature"), NATURE_TEXT_X, NATURE_LABEL_Y, centered = true)
         drawSmallText(
             guiGraphics,
             Component.literal(natureText.fit(13)),
@@ -216,7 +217,7 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
             colour = natureColor
         )
 
-        drawSmallText(guiGraphics, Component.literal("Ability"), ABILITY_TEXT_X, ABILITY_LABEL_Y, centered = true)
+        drawSmallText(guiGraphics, Component.translatable("gui.cobblemon_incubator.label.ability"), ABILITY_TEXT_X, ABILITY_LABEL_Y, centered = true)
         drawSmallText(
             guiGraphics,
             Component.literal(abilityText.fit(13)),
@@ -373,7 +374,7 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
     }
 
     private fun displayName(value: String?): String {
-        val clean = value?.substringAfter(':')?.substringAfterLast('/') ?: return "Unknown"
+        val clean = value?.substringAfter(':')?.substringAfterLast('/') ?: return I18n.get("gui.cobblemon_incubator.value.unknown")
         return clean.split('-', '_', ' ')
             .filter { it.isNotBlank() }
             .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } }

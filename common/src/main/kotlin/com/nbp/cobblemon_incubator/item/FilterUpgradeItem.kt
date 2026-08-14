@@ -35,11 +35,17 @@ class FilterUpgradeItem(properties: Properties) : Item(properties) {
             )
             return
         }
-        tooltipComponents.add(Component.literal(config.summary()).withStyle(ChatFormatting.AQUA))
+        val summary = config.summaryComponents()
+        val combined = Component.empty()
+        summary.forEachIndexed { index, part ->
+            if (index > 0) combined.append(" | ")
+            combined.append(part)
+        }
+        tooltipComponents.add(combined.withStyle(ChatFormatting.AQUA))
         tooltipComponents.add(
             Component.translatable(
                 "item.cobblemon_incubator.filter_upgrade.reject",
-                config.rejectAction.label
+                config.rejectAction.component()
             ).withStyle(ChatFormatting.DARK_GRAY)
         )
     }
