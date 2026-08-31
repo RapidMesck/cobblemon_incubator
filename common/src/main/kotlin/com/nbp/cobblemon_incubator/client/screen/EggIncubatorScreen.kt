@@ -297,6 +297,8 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
 
         if (menu.showSpecies || menu.showGender) {
             val nameText = Component.empty()
+            val isShiny = properties.shiny == true
+            if (isShiny && menu.showSpecies) nameText.append("★ ")
             if (menu.showSpecies) nameText.append(displayName(properties.species).fit(14))
             if (menu.showGender) {
                 genderSymbol(CobbreedingCompat.resolveGenderName(properties))?.let {
@@ -304,7 +306,8 @@ class EggIncubatorScreen(menu: EggIncubatorMenu, inventory: Inventory, title: Co
                     nameText.append(it)
                 }
             }
-            drawPcText(guiGraphics, nameText, 5F, 12F, shadow = true)
+            val nameColor = if (isShiny) 0xFFD700 else 0xFFFFFF
+            drawPcText(guiGraphics, nameText, 5F, 12F, shadow = true, colour = nameColor)
         }
         if (menu.showNature) {
             drawSmallText(guiGraphics, Component.translatable("gui.cobblemon_incubator.label.nature"), 38.5F, 98F, centered = true)

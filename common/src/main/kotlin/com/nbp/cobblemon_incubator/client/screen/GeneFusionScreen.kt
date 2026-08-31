@@ -133,7 +133,7 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
     }
 
     override fun renderBg(guiGraphics: GuiGraphics, partialTick: Float, mouseX: Int, mouseY: Int) {
-        val properties = eggProperties()
+        val properties = previewProperties()
         updateModelWidget(properties)
 
         val bgX = leftPos - X_OFFSET
@@ -170,11 +170,15 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
 
         renderChargeInfo(guiGraphics)
 
-        val properties = eggProperties()
+        val properties = previewProperties()
         if (properties == null) {
             drawPcText(guiGraphics, Component.translatable("gui.cobblemon_incubator.no_egg"), -33F, 12F, shadow = true)
         } else {
-            drawPcText(guiGraphics, Component.literal(displayName(properties.species)), -33F, 12F, shadow = true)
+            val isShiny = properties.shiny == true
+            val name = displayName(properties.species)
+            val titleText = if (isShiny) Component.literal("★ $name") else Component.literal(name)
+            val titleColour = if (isShiny) 0xFFD700 else 0xFFFFFF
+            drawPcText(guiGraphics, titleText, -33F, 12F, shadow = true, colour = titleColour)
         }
 
         renderSelectors(guiGraphics)
@@ -182,7 +186,7 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
         val previewIvs = menu.previewIvs()
         if (previewIvs != null) {
             renderIvChart(guiGraphics, previewIvs)
-        } else if (eggProperties() != null) {
+        } else if (previewProperties() != null) {
             drawPcText(
                 guiGraphics,
                 Component.translatable("gui.cobblemon_incubator.ivs_unknown"),
@@ -366,11 +370,35 @@ class GeneFusionScreen(menu: GeneFusionMenu, inventory: Inventory, title: Compon
         }
     }
 
-    private fun eggProperties(): PokemonProperties? {
-        return menu.clientEggPropertiesOverride?.firstOrNull { it != null }
+    private fun previewProperties(): PokemonProperties? {
+        val allProps = (menu.clientEggPropertiesOverride
             ?: (GeneFusionBlockEntity.SLOT_EGG_START..GeneFusionBlockEntity.SLOT_EGG_END)
-                .mapNotNull { CobbreedingCompat.extractProperties(menu.container.getItem(it)) }
-                .firstOrNull()
+                .mapNotNull { CobbreedingCompat.extractProperties(menu.container.getItem(it)) })
+            .filterNotNull()
+        if (allProps.isEmpty()) return null
+
+        val baseProps = allProps.first()
+        val baseSpecies = baseProps.species ?: return null
+        val isShiny = allProps.any { it.shiny == true }
+        val selectedNature = menu.getSelectedNature()
+        val selectedAbility = menu.getSelectedAbility()
+
+        return PokemonProperties().apply {
+            this.species = baseSpecies
+            this.nature = selectedNature.ifBlank { baseProps.nature }
+            this.ability = selectedAbility.ifBlank { baseProps.ability }
+            this.form = baseProps.form
+            this.ivs = menu.previewIvs()
+            if (isShiny) {
+                this.shiny = true
+            }
+            if (!baseProps.pokeball.isNullOrBlank()) {
+                this.pokeball = baseProps.pokeball
+            }
+            if (!baseProps.aspects.isNullOrEmpty()) {
+                this.aspects = HashSet(baseProps.aspects)
+            }
+        }
     }
 
     private fun displayName(value: String?): String {

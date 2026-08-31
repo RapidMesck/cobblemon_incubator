@@ -411,7 +411,7 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
             val geneFusion = level.getBlockEntity(adjacentPos) as? GeneFusionBlockEntity ?: continue
 
             val targetSlot = (GeneFusionBlockEntity.SLOT_EGG_START..GeneFusionBlockEntity.SLOT_EGG_END)
-                .firstOrNull { geneFusion.getItem(it).isEmpty }
+                .firstOrNull { geneFusion.getItem(it).isEmpty && geneFusion.canPlaceItem(it, egg) }
                 ?: continue
 
             geneFusion.setItem(targetSlot, egg.copy())

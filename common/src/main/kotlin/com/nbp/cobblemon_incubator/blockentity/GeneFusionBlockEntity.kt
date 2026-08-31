@@ -239,12 +239,26 @@ class GeneFusionBlockEntity(pos: BlockPos, state: BlockState) :
             .mapNotNull { CobbreedingCompat.getTimer(items[it]) }
         val avgTimer = if (timers.isNotEmpty()) timers.average().roundToInt() else 600
 
+        val isShiny = allProps.any { it.shiny == true }
+
         val fusedProperties = PokemonProperties().apply {
             this.species = baseSpecies
             this.nature = nature
             this.ability = ability
             this.ivs = bestIvs
             this.form = baseProps.form
+            if (isShiny) {
+                this.shiny = true
+            }
+            if (!baseProps.pokeball.isNullOrBlank()) {
+                this.pokeball = baseProps.pokeball
+            }
+            if (!baseProps.aspects.isNullOrEmpty()) {
+                this.aspects = HashSet(baseProps.aspects)
+            }
+            if (!baseProps.moves.isNullOrEmpty()) {
+                this.moves = baseProps.moves
+            }
         }
 
         val resultEgg = CobbreedingCompat.createFusedEgg(fusedProperties, avgTimer) ?: return false

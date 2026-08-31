@@ -113,11 +113,13 @@ object CobbreedingCompat {
         val properties = extractProperties(stack)
         val speciesId = properties?.species ?: return Component.translatable("tooltip.cobblemon_incubator.unknown_pokemon")
         val species = findSpecies(speciesId)
-        val name = species?.translatedName ?: Component.literal(displayName(speciesId))
+        val isShiny = properties.shiny == true
+        val baseName = species?.translatedName ?: Component.literal(displayName(speciesId))
+        val name = if (isShiny) Component.literal("★ ").append(baseName) else baseName
         val tooltip = buildPokemonTooltip(properties)
         return name.copy().withStyle { style ->
             style
-                .withColor(ChatFormatting.GREEN)
+                .withColor(if (isShiny) ChatFormatting.GOLD else ChatFormatting.GREEN)
                 .withUnderlined(true)
                 .withHoverEvent(HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip))
         }
@@ -128,7 +130,12 @@ object CobbreedingCompat {
         val ability = nameComponent(properties.ability)
         val ivs = properties.ivs
 
-        return Component.empty()
+        val builder = Component.empty()
+        if (properties.shiny == true) {
+            builder.append(Component.literal("★ Shiny").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                .append("\n")
+        }
+        return builder
             .append(Component.translatable("tooltip.cobblemon_incubator.nature", nature))
             .append("\n")
             .append(Component.translatable("tooltip.cobblemon_incubator.ability", ability))
