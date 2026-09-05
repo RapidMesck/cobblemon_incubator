@@ -95,5 +95,20 @@
   "item.cobblemon_incubator.filter_upgrade.summary.gender": "Gender %s",
   "item.cobblemon_incubator.filter_upgrade.summary.min_perfect_ivs": "Min %s perfect IVs",
   "item.cobblemon_incubator.stem_cell_syringe.charge_line": "%s: %s / %s",
-  "tooltip.cobblemon_incubator.unknown_pokemon": "Pokemon"
+  "tooltip.cobblemon_incubator.unknown_pokemon": "Pokemon",
+  "item.cobblemon_incubator.egg_pouch": "Egg Pouch",
+  "item.cobblemon_incubator.egg_pouch.count": "Stored Eggs: %s",
+  "item.cobblemon_incubator.advanced_egg_pouch": "Advanced Egg Pouch",
+  "item.cobblemon_incubator.advanced_egg_pouch.scanner_badge": "Built-in Scanner",
+  "container.cobblemon_incubator.egg_pouch": "Egg Pouch",
+  "container.cobblemon_incubator.egg_pouch.title": "Pouch",
+  "gui.cobblemon_incubator.pouch.search": "Search",
+  "gui.cobblemon_incubator.pouch.search_hint": "Species...",
+  "gui.cobblemon_incubator.pouch.search_advanced_hint": "Filter...",
+  "gui.cobblemon_incubator.pouch.search_tooltip": "Search eggs by species name",
+  "gui.cobblemon_incubator.pouch.search_advanced_tooltip": "Search filters:\nt:<type> (e.g. t:water)\na:<ability> (e.g. a:blaze)\nn:<nature> (e.g. n:jolly)\ng:<gender> (e.g. g:female)\niv:<stat>=<val> (e.g. iv:spe=31)\n5iv / 6iv (min perfect IVs)\nshiny / !shiny",
+  "gui.cobblemon_incubator.pouch.deposit": "Deposit",
+  "gui.cobblemon_incubator.pouch.deposit.tooltip": "Deposit all eggs from inventory",
+  "gui.cobblemon_incubator.pouch.types": "Types",
+  "gui.cobblemon_incubator.pouch.timer": "Hatch timer: %s steps"
 }

@@ -7,14 +7,18 @@ import com.nbp.cobblemon_incubator.block.GeneFusionBlock
 import com.nbp.cobblemon_incubator.blockentity.EggIncubatorBlockEntity
 import com.nbp.cobblemon_incubator.blockentity.GeneFusionBlockEntity
 import com.nbp.cobblemon_incubator.config.IncubatorConfig
+import com.nbp.cobblemon_incubator.item.AdvancedEggPouchItem
 import com.nbp.cobblemon_incubator.item.AnalyseUpgradeItem
 import com.nbp.cobblemon_incubator.item.BreedingScannerItem
+import com.nbp.cobblemon_incubator.item.EggPouchItem
 import com.nbp.cobblemon_incubator.item.FilterUpgradeItem
 import com.nbp.cobblemon_incubator.item.PcUpgradeItem
 import com.nbp.cobblemon_incubator.item.SpeedUpgradeItem
 import com.nbp.cobblemon_incubator.item.StemCellSyringeItem
 import com.nbp.cobblemon_incubator.menu.EggIncubatorMenu
+import com.nbp.cobblemon_incubator.menu.EggPouchMenu
 import com.nbp.cobblemon_incubator.menu.GeneFusionMenu
+import com.nbp.cobblemon_incubator.recipe.EggPouchUpgradeRecipe
 import com.nbp.cobblemon_incubator.recipe.SyringeMergeRecipe
 import dev.architectury.registry.CreativeTabRegistry
 import dev.architectury.registry.menu.MenuRegistry
@@ -90,6 +94,14 @@ object ModRegistries {
         StemCellSyringeItem(Item.Properties().stacksTo(1))
     }
 
+    val EGG_POUCH: RegistrySupplier<EggPouchItem> = ITEMS.register("egg_pouch") {
+        EggPouchItem(Item.Properties().stacksTo(1))
+    }
+
+    val ADVANCED_EGG_POUCH: RegistrySupplier<AdvancedEggPouchItem> = ITEMS.register("advanced_egg_pouch") {
+        AdvancedEggPouchItem(Item.Properties().stacksTo(1))
+    }
+
     val GENE_FUSION: RegistrySupplier<GeneFusionBlock> = BLOCKS.register("gene_fusion") {
         GeneFusionBlock(
             BlockBehaviour.Properties.of()
@@ -127,6 +139,8 @@ object ModRegistries {
                 .displayItems { _, output ->
                     output.accept(EGG_INCUBATOR_ITEM.get())
                     output.accept(GENE_FUSION_ITEM.get())
+                    output.accept(EGG_POUCH.get())
+                    output.accept(ADVANCED_EGG_POUCH.get())
                     output.accept(SPEED_UPGRADE.get())
                     output.accept(PC_UPGRADE.get())
                     output.accept(FILTER_UPGRADE.get())
@@ -159,9 +173,24 @@ object ModRegistries {
             .build()
     }
 
+    val POUCH_UUID: RegistrySupplier<DataComponentType<String>> = DATA_COMPONENT_TYPES.register("pouch_uuid") {
+        DataComponentType.builder<String>().persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8)
+            .build()
+    }
+
+    val POUCH_EGG_COUNT: RegistrySupplier<DataComponentType<Int>> = DATA_COMPONENT_TYPES.register("pouch_egg_count") {
+        DataComponentType.builder<Int>().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT)
+            .build()
+    }
+
     val SYRINGE_MERGE_RECIPE_SERIALIZER: RegistrySupplier<RecipeSerializer<SyringeMergeRecipe>> =
         RECIPE_SERIALIZERS.register("syringe_merge") {
             SimpleCraftingRecipeSerializer(::SyringeMergeRecipe)
+        }
+
+    val EGG_POUCH_UPGRADE_RECIPE_SERIALIZER: RegistrySupplier<RecipeSerializer<EggPouchUpgradeRecipe>> =
+        RECIPE_SERIALIZERS.register("egg_pouch_upgrade") {
+            SimpleCraftingRecipeSerializer(::EggPouchUpgradeRecipe)
         }
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
@@ -172,6 +201,10 @@ object ModRegistries {
 
     val EGG_INCUBATOR_MENU: RegistrySupplier<MenuType<EggIncubatorMenu>> = MENU_TYPES.register("egg_incubator") {
         MenuRegistry.ofExtended(::EggIncubatorMenu)
+    }
+
+    val EGG_POUCH_MENU: RegistrySupplier<MenuType<EggPouchMenu>> = MENU_TYPES.register("egg_pouch") {
+        MenuRegistry.ofExtended(::EggPouchMenu)
     }
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")

@@ -20,6 +20,7 @@ object CobblemonIncubator {
     fun init() {
         IncubatorConfig.load()
         ModRegistries.register()
+        com.nbp.cobblemon_incubator.network.ModNetwork.register()
         registerEvents()
         registerCommands()
         logger.info("Cobblemon Incubator loaded!")

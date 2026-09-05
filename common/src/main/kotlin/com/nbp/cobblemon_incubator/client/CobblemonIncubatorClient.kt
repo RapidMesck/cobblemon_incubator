@@ -1,6 +1,7 @@
 package com.nbp.cobblemon_incubator.client
 
 import com.nbp.cobblemon_incubator.client.screen.EggIncubatorScreen
+import com.nbp.cobblemon_incubator.client.screen.EggPouchScreen
 import com.nbp.cobblemon_incubator.client.screen.GeneFusionScreen
 import com.nbp.cobblemon_incubator.registry.ModRegistries
 import dev.architectury.registry.menu.MenuRegistry
@@ -11,6 +12,7 @@ object CobblemonIncubatorClient {
     fun registerScreen() {
         MenuRegistry.registerScreenFactory(ModRegistries.EGG_INCUBATOR_MENU.get(), ::EggIncubatorScreen)
         MenuRegistry.registerScreenFactory(ModRegistries.GENE_FUSION_MENU.get(), ::GeneFusionScreen)
+        MenuRegistry.registerScreenFactory(ModRegistries.EGG_POUCH_MENU.get(), ::EggPouchScreen)
     }
 
     fun registerRenderTypes() {

@@ -95,5 +95,20 @@
   "item.cobblemon_incubator.filter_upgrade.summary.gender": "Genero %s",
   "item.cobblemon_incubator.filter_upgrade.summary.min_perfect_ivs": "Min %s IVs perfeitos",
   "item.cobblemon_incubator.stem_cell_syringe.charge_line": "%s: %s / %s",
-  "tooltip.cobblemon_incubator.unknown_pokemon": "Pokemon"
+  "tooltip.cobblemon_incubator.unknown_pokemon": "Pokemon",
+  "item.cobblemon_incubator.egg_pouch": "Bolsa de Ovos",
+  "item.cobblemon_incubator.egg_pouch.count": "Ovos Armazenados: %s",
+  "item.cobblemon_incubator.advanced_egg_pouch": "Bolsa de Ovos Avançada",
+  "item.cobblemon_incubator.advanced_egg_pouch.scanner_badge": "Scanner Integrado",
+  "container.cobblemon_incubator.egg_pouch": "Bolsa de Ovos",
+  "container.cobblemon_incubator.egg_pouch.title": "Bolsa",
+  "gui.cobblemon_incubator.pouch.search": "Buscar",
+  "gui.cobblemon_incubator.pouch.search_hint": "Espécie...",
+  "gui.cobblemon_incubator.pouch.search_advanced_hint": "Filtro...",
+  "gui.cobblemon_incubator.pouch.search_tooltip": "Buscar ovos pelo nome da espécie",
+  "gui.cobblemon_incubator.pouch.search_advanced_tooltip": "Filtros de busca:\nt:<tipo> (ex: t:fogo)\na:<habilidade> (ex: a:blaze)\nn:<nature> (ex: n:jolly)\ng:<gênero> (ex: g:female)\niv:<stat>=<val> (ex: iv:spe=31)\n5iv / 6iv (mín. IVs perfeitos)\nshiny / !shiny",
+  "gui.cobblemon_incubator.pouch.deposit": "Guardar",
+  "gui.cobblemon_incubator.pouch.deposit.tooltip": "Guardar todos os ovos do inventário",
+  "gui.cobblemon_incubator.pouch.types": "Tipos",
+  "gui.cobblemon_incubator.pouch.timer": "Tempo para chocar: %s passos"
 }
