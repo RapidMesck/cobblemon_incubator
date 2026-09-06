@@ -10,7 +10,7 @@ PC delivery, and inventory automation.
 | --- | --- |
 | Minecraft | 1.21.1 |
 | Java | 21 |
-| Cobblemon | 1.7.0+1.21.1 |
+| Cobblemon | 1.8.0+1.21.1 |
 | Cobbreeding | Required |
 | Architectury API | 13.0.8 |
 | Fabric Loader | 0.17.0+ |

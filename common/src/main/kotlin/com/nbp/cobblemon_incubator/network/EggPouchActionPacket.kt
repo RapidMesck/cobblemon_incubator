@@ -1,29 +1,31 @@
 package com.nbp.cobblemon_incubator.network
 
+import com.nbp.cobblemon_incubator.CobblemonIncubator
 import com.nbp.cobblemon_incubator.menu.EggPouchMenu
 import dev.architectury.networking.NetworkManager
-import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.network.codec.ByteBufCodecs
+import net.minecraft.network.codec.StreamCodec
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
-import java.util.function.Supplier
 
 data class EggPouchActionPacket(
     val scrollRow: Int,
     val searchQuery: String
-) {
+) : CustomPacketPayload {
+
     companion object {
-        fun encode(packet: EggPouchActionPacket, buffer: FriendlyByteBuf) {
-            buffer.writeVarInt(packet.scrollRow)
-            buffer.writeUtf(packet.searchQuery, 128)
-        }
+        val TYPE: CustomPacketPayload.Type<EggPouchActionPacket> =
+            CustomPacketPayload.Type(ResourceLocation.fromNamespaceAndPath(CobblemonIncubator.MOD_ID, "egg_pouch_action"))
 
-        fun decode(buffer: FriendlyByteBuf): EggPouchActionPacket {
-            val scrollRow = buffer.readVarInt()
-            val searchQuery = buffer.readUtf(128)
-            return EggPouchActionPacket(scrollRow, searchQuery)
-        }
+        val CODEC: StreamCodec<RegistryFriendlyByteBuf, EggPouchActionPacket> = StreamCodec.composite(
+            ByteBufCodecs.VAR_INT, EggPouchActionPacket::scrollRow,
+            ByteBufCodecs.stringUtf8(128), EggPouchActionPacket::searchQuery,
+            ::EggPouchActionPacket
+        )
 
-        fun handle(packet: EggPouchActionPacket, contextSupplier: Supplier<NetworkManager.PacketContext>) {
-            val context = contextSupplier.get()
+        fun handle(packet: EggPouchActionPacket, context: NetworkManager.PacketContext) {
             context.queue {
                 val player = context.player as? ServerPlayer ?: return@queue
                 val menu = player.containerMenu as? EggPouchMenu ?: return@queue
@@ -31,4 +33,6 @@ data class EggPouchActionPacket(
             }
         }
     }
+
+    override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = TYPE
 }

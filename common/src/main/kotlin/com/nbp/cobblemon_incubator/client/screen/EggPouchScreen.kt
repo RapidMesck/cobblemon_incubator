@@ -5,7 +5,6 @@ import com.cobblemon.mod.common.api.pokemon.stats.Stats
 import com.nbp.cobblemon_incubator.menu.EggPouchMenu
 import com.nbp.cobblemon_incubator.network.EggPouchActionPacket
 import com.nbp.cobblemon_incubator.network.ModNetwork
-import com.nbp.cobblemon_incubator.registry.ModRegistries
 import com.nbp.cobblemon_incubator.util.CobbreedingCompat
 import com.nbp.cobblemon_incubator.util.FilterConfig
 import net.minecraft.ChatFormatting
@@ -18,6 +17,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.Mth
+import net.minecraft.client.resources.sounds.SimpleSoundInstance
+import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.item.ItemStack
 
@@ -35,6 +36,9 @@ class EggPouchScreen(
         private const val SCROLLER_WIDTH = 12
         private const val SCROLLER_HEIGHT = 15
         private const val TRACK_HEIGHT = 108
+
+        private const val INFO_TAB_WIDTH = 14
+        private const val INFO_TAB_HEIGHT = 12
     }
 
     private lateinit var searchBox: EditBox
@@ -45,7 +49,7 @@ class EggPouchScreen(
     private val displayTitle: Component
         get() {
             val short = Component.translatable("container.cobblemon_incubator.egg_pouch.title")
-            return if (font.width(title) <= 26) title else short
+            return if (font.width(title) <= 45) title else short
         }
 
     init {
@@ -53,8 +57,8 @@ class EggPouchScreen(
         imageHeight = 222
         inventoryLabelX = 8
         inventoryLabelY = 128
-        titleLabelX = 26
-        titleLabelY = 5
+        titleLabelX = 8
+        titleLabelY = 6
     }
 
     override fun init() {
@@ -74,7 +78,7 @@ class EggPouchScreen(
             setHint(Component.translatable(if (menu.isAdvanced) "gui.cobblemon_incubator.pouch.search_advanced_hint" else "gui.cobblemon_incubator.pouch.search_hint").withStyle(ChatFormatting.DARK_GRAY))
             setTooltip(Tooltip.create(Component.translatable(if (menu.isAdvanced) "gui.cobblemon_incubator.pouch.search_advanced_tooltip" else "gui.cobblemon_incubator.pouch.search_tooltip")))
             setResponder { query ->
-                ModNetwork.CHANNEL.sendToServer(EggPouchActionPacket(0, query))
+                ModNetwork.sendToServer(EggPouchActionPacket(0, query))
             }
         }
         addRenderableWidget(searchBox)
@@ -100,10 +104,6 @@ class EggPouchScreen(
         guiGraphics.blit(CONTAINER_BACKGROUND, left, top, 0, 0, 176, 126)
         guiGraphics.blit(CONTAINER_BACKGROUND, left, top + 126, 0, 126, 176, 96)
 
-        // Pouch item icon on top-left
-        val pouchStack = ItemStack(if (menu.isAdvanced) ModRegistries.ADVANCED_EGG_POUCH.get() else ModRegistries.EGG_POUCH.get())
-        guiGraphics.renderFakeItem(pouchStack, left + 7, top + 1)
-
         // Search box inset background (left + 54 to left + 118)
         guiGraphics.fill(left + 54, top + 3, left + 118, top + 15, 0xFF373737.toInt())
         guiGraphics.fill(left + 55, top + 4, left + 117, top + 14, 0xFF8B8B8B.toInt())
@@ -122,18 +122,46 @@ class EggPouchScreen(
         val thumbY = trackY + (thumbProgress * (TRACK_HEIGHT - SCROLLER_HEIGHT)).toInt()
         val scrollerSprite = if (maxScroll > 0) SCROLLER_SPRITE else SCROLLER_DISABLED_SPRITE
         guiGraphics.blitSprite(scrollerSprite, trackX + 1, thumbY, SCROLLER_WIDTH, SCROLLER_HEIGHT)
+
+        // Info guide tab above container for Advanced Pouch
+        if (menu.isAdvanced) {
+            val infoX = left + 157
+            val infoY = (top - INFO_TAB_HEIGHT).coerceAtLeast(1)
+            val infoH = top - infoY
+            val hovered = isInfoHovered(mouseX.toDouble(), mouseY.toDouble())
+
+            val bg = if (hovered) 0xFF2A3A42.toInt() else 0xFF232323.toInt()
+            val border = if (hovered) 0xFF00E5FF.toInt() else 0xFF4A606A.toInt()
+            val textCol = if (hovered) 0x00E5FF else 0x88B8C8
+
+            guiGraphics.fill(infoX, infoY, infoX + INFO_TAB_WIDTH, top, bg)
+            guiGraphics.fill(infoX, infoY, infoX + INFO_TAB_WIDTH, infoY + 1, border)
+            guiGraphics.fill(infoX, infoY, infoX + 1, top, border)
+            guiGraphics.fill(infoX + INFO_TAB_WIDTH - 1, infoY, infoX + INFO_TAB_WIDTH, top, border)
+
+            val text = Component.literal("i").withStyle(ChatFormatting.BOLD)
+            val textX = infoX + (INFO_TAB_WIDTH - font.width(text)) / 2
+            val textY = infoY + (infoH - 8) / 2
+            guiGraphics.drawString(font, text, textX, textY, textCol, false)
+        }
     }
 
     override fun renderLabels(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
-        // Short pouch title next to icon (never overlaps search box)
+        // Short pouch title (never overlaps search box)
         guiGraphics.drawString(font, displayTitle, titleLabelX, titleLabelY, 0x404040, false)
         // Player inventory label
         guiGraphics.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0x404040, false)
     }
 
     override fun renderTooltip(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
-        // Show full pouch name tooltip when hovering over icon/title
-        if (mouseX >= leftPos + 6 && mouseX <= leftPos + 53 && mouseY >= topPos + 1 && mouseY <= topPos + 16) {
+        // Show advanced search guide tooltip when hovering over info tab
+        if (isInfoHovered(mouseX.toDouble(), mouseY.toDouble())) {
+            renderSearchGuideTooltip(guiGraphics, mouseX, mouseY)
+            return
+        }
+
+        // Show full pouch name tooltip when hovering over title
+        if (mouseX >= leftPos + 7 && mouseX <= leftPos + 53 && mouseY >= topPos + 2 && mouseY <= topPos + 16) {
             guiGraphics.renderComponentTooltip(font, listOf(title), mouseX, mouseY)
             return
         }
@@ -295,7 +323,7 @@ class EggPouchScreen(
             val delta = if (scrollY > 0) -1 else 1
             val nextRow = (menu.currentScrollRow + delta).coerceIn(0, menu.maxScrollRows)
             if (nextRow != menu.currentScrollRow) {
-                ModNetwork.CHANNEL.sendToServer(EggPouchActionPacket(nextRow, searchBox.value))
+                ModNetwork.sendToServer(EggPouchActionPacket(nextRow, searchBox.value))
                 return true
             }
         }
@@ -304,6 +332,12 @@ class EggPouchScreen(
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         if (button == 0) {
+            if (isInfoHovered(mouseX, mouseY)) {
+                Minecraft.getInstance().soundManager.play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f))
+                searchBox.isFocused = true
+                return true
+            }
+
             val trackX = leftPos + 175
             val trackY = topPos + 18
             if (mouseX >= trackX && mouseX <= trackX + SCROLLER_WIDTH + 2 && mouseY >= trackY && mouseY <= trackY + TRACK_HEIGHT) {
@@ -311,8 +345,52 @@ class EggPouchScreen(
                 updateScrollFromMouse(mouseY)
                 return true
             }
+        } else if (button == 1) {
+            if (searchBox.isMouseOver(mouseX, mouseY)) {
+                searchBox.value = ""
+                return true
+            }
         }
         return super.mouseClicked(mouseX, mouseY, button)
+    }
+
+    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        if (searchBox.isFocused) {
+            if (keyCode == 256) {
+                onClose()
+                return true
+            }
+            if (searchBox.keyPressed(keyCode, scanCode, modifiers)) {
+                return true
+            }
+            // While typing in search box, prevent keyInventory (E) or hotbar keys (1-9) from closing/interfering
+            return true
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers)
+    }
+
+    private fun isInfoHovered(mouseX: Double, mouseY: Double): Boolean {
+        if (!menu.isAdvanced) return false
+        val infoX = leftPos + 157
+        val infoY = (topPos - INFO_TAB_HEIGHT).coerceAtLeast(1)
+        return mouseX >= infoX && mouseX < infoX + INFO_TAB_WIDTH && mouseY >= infoY && mouseY < topPos
+    }
+
+    private fun renderSearchGuideTooltip(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
+        val lines = listOf(
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.title").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD),
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.subtitle").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC),
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.species").withStyle(ChatFormatting.WHITE),
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.type").withStyle(ChatFormatting.YELLOW),
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.ability").withStyle(ChatFormatting.GREEN),
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.nature").withStyle(ChatFormatting.LIGHT_PURPLE),
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.gender").withStyle(ChatFormatting.BLUE),
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.ivs_min").withStyle(ChatFormatting.GOLD),
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.ivs_stat").withStyle(ChatFormatting.RED),
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.shiny").withStyle(ChatFormatting.YELLOW),
+            Component.translatable("gui.cobblemon_incubator.pouch.guide.example").withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.ITALIC)
+        )
+        guiGraphics.renderComponentTooltip(font, lines, mouseX, mouseY)
     }
 
     override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
@@ -339,7 +417,7 @@ class EggPouchScreen(
         val progress = (relativeY / (TRACK_HEIGHT - SCROLLER_HEIGHT)).toFloat()
         val targetRow = (progress * maxScroll).toInt().coerceIn(0, maxScroll)
         if (targetRow != menu.currentScrollRow) {
-            ModNetwork.CHANNEL.sendToServer(EggPouchActionPacket(targetRow, searchBox.value))
+            ModNetwork.sendToServer(EggPouchActionPacket(targetRow, searchBox.value))
         }
     }
 }

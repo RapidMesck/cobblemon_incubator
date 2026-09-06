@@ -1,20 +1,19 @@
 package com.nbp.cobblemon_incubator.network
 
-import com.nbp.cobblemon_incubator.CobblemonIncubator
-import dev.architectury.networking.NetworkChannel
-import net.minecraft.resources.ResourceLocation
+import dev.architectury.networking.NetworkManager
 
 object ModNetwork {
-    val CHANNEL: NetworkChannel = NetworkChannel.create(
-        ResourceLocation.fromNamespaceAndPath(CobblemonIncubator.MOD_ID, "main")
-    )
-
     fun register() {
-        CHANNEL.register(
-            EggPouchActionPacket::class.java,
-            EggPouchActionPacket::encode,
-            EggPouchActionPacket::decode,
-            EggPouchActionPacket::handle
-        )
+        NetworkManager.registerReceiver(
+            NetworkManager.c2s(),
+            EggPouchActionPacket.TYPE,
+            EggPouchActionPacket.CODEC
+        ) { packet, context ->
+            EggPouchActionPacket.handle(packet, context)
+        }
+    }
+
+    fun sendToServer(packet: EggPouchActionPacket) {
+        NetworkManager.sendToServer(packet)
     }
 }

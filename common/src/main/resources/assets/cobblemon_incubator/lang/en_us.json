@@ -110,5 +110,16 @@
   "gui.cobblemon_incubator.pouch.deposit": "Deposit",
   "gui.cobblemon_incubator.pouch.deposit.tooltip": "Deposit all eggs from inventory",
   "gui.cobblemon_incubator.pouch.types": "Types",
-  "gui.cobblemon_incubator.pouch.timer": "Hatch timer: %s steps"
+  "gui.cobblemon_incubator.pouch.timer": "Hatch timer: %s steps",
+  "gui.cobblemon_incubator.pouch.guide.title": "Advanced Search Guide",
+  "gui.cobblemon_incubator.pouch.guide.subtitle": "Combine filters separated by spaces:",
+  "gui.cobblemon_incubator.pouch.guide.species": "• Species: Pokemon name (e.g. pikachu, eevee)",
+  "gui.cobblemon_incubator.pouch.guide.type": "• Type (t:): t:fire, t:water, t:dragon, t:fairy",
+  "gui.cobblemon_incubator.pouch.guide.ability": "• Ability (a:): a:blaze, a:intimidate",
+  "gui.cobblemon_incubator.pouch.guide.nature": "• Nature (n:): n:jolly, n:adamant, n:modest",
+  "gui.cobblemon_incubator.pouch.guide.gender": "• Gender (g:): g:male, g:female, g:genderless",
+  "gui.cobblemon_incubator.pouch.guide.ivs_min": "• Perfect IVs: 5iv, 6iv or iv>=5",
+  "gui.cobblemon_incubator.pouch.guide.ivs_stat": "• Specific IV: iv:spe=31, iv:atk<=0, iv:hp>=30",
+  "gui.cobblemon_incubator.pouch.guide.shiny": "• Shiny: shiny or !shiny",
+  "gui.cobblemon_incubator.pouch.guide.example": "Example: charmander t:fire 5iv shiny"
 }

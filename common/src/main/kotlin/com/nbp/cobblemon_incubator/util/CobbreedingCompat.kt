@@ -9,6 +9,7 @@ import com.cobblemon.mod.common.api.pokemon.stats.Stats
 import com.cobblemon.mod.common.pokemon.Gender
 import com.nbp.cobblemon_incubator.CobblemonIncubator
 import net.minecraft.ChatFormatting
+import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
@@ -54,6 +55,26 @@ object CobbreedingCompat {
 
     fun extractProperties(stack: ItemStack): PokemonProperties? {
         if (stack.isEmpty) return null
+
+        val customData = stack.get(DataComponents.CUSTOM_DATA)
+        if (customData != null) {
+            val tag = customData.copyTag()
+            if (tag.contains("PouchEggProps")) {
+                val propStr = tag.getString("PouchEggProps")
+                if (propStr.isNotBlank()) {
+                    val parsed = runCatching { PokemonProperties.parse(propStr) }.getOrNull()
+                    if (parsed != null) {
+                        if (tag.contains("PouchEggGender")) {
+                            val genderName = tag.getString("PouchEggGender")
+                            val gender = runCatching { Gender.valueOf(genderName) }.getOrNull()
+                            if (gender != null) parsed.gender = gender
+                        }
+                        return parsed
+                    }
+                }
+            }
+        }
+
         return runCatching {
             extractPropertiesMethod?.invoke(null, stack) as? PokemonProperties
         }.onFailure {
@@ -68,6 +89,13 @@ object CobbreedingCompat {
     }
 
     fun getTimer(stack: ItemStack): Int? {
+        val customData = stack.get(DataComponents.CUSTOM_DATA)
+        if (customData != null) {
+            val tag = customData.copyTag()
+            if (tag.contains("PouchEggTimer")) {
+                return tag.getInt("PouchEggTimer")
+            }
+        }
         val component = BuiltInRegistries.DATA_COMPONENT_TYPE.get(timerId)
         @Suppress("UNCHECKED_CAST")
         return component?.let { stack.get(it as net.minecraft.core.component.DataComponentType<Int>) }
@@ -105,8 +133,26 @@ object CobbreedingCompat {
         val possible = species.possibleGenders
         if (possible.size <= 1) return possible.firstOrNull()
         if (Gender.GENDERLESS in possible) return Gender.GENDERLESS
+
         val seed = properties.asString(" ").hashCode().toLong()
-        return if (Random(seed).nextFloat() < species.maleRatio) Gender.MALE else Gender.FEMALE
+        val random = Random(seed)
+
+        val allForms = species.forms
+        val isGenderedForms = allForms.any { it.maleRatio == 1F } && allForms.any { it.maleRatio == 0F }
+        if (isGenderedForms) {
+            return if (random.nextFloat() < 0.5F) Gender.MALE else Gender.FEMALE
+        }
+
+        val form = properties.form?.let { formId ->
+            species.forms.firstOrNull {
+                it.formOnlyShowdownId().equals(formId, true) || it.name.equals(formId, true)
+            }
+        } ?: species.standardForm
+
+        if (form.possibleGenders.size <= 1) return form.possibleGenders.firstOrNull()
+
+        val ratio = if (form.maleRatio in 0F..1F) form.maleRatio else species.maleRatio
+        return if (random.nextFloat() < ratio) Gender.MALE else Gender.FEMALE
     }
 
     fun getSpeciesDisplayName(stack: ItemStack): Component {

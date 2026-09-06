@@ -6,6 +6,7 @@ import com.nbp.cobblemon_incubator.command.FillSyringeCommand
 import com.nbp.cobblemon_incubator.config.IncubatorConfig
 import com.nbp.cobblemon_incubator.item.StemCellSyringeItem
 import com.nbp.cobblemon_incubator.registry.ModRegistries
+import com.nbp.cobblemon_incubator.util.CobbreedingCompat
 import dev.architectury.event.events.common.CommandRegistrationEvent
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
@@ -35,6 +36,9 @@ object CobblemonIncubator {
     private fun registerEvents() {
         CobblemonEvents.BATTLE_VICTORY.subscribe { event ->
             handleBattleVictory(event)
+        }
+        CobblemonEvents.HATCH_EGG_PRE.subscribe { event ->
+            CobbreedingCompat.resolveGender(event.egg)
         }
     }
 

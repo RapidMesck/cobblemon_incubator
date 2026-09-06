@@ -99,7 +99,7 @@ Pasture -> Egg Incubator -> Chest
 ## Requirements
 
 - Minecraft 1.21.1
-- Cobblemon 1.7.0
+- Cobblemon 1.8.0
 - Cobbreeding
 - Architectury API
 

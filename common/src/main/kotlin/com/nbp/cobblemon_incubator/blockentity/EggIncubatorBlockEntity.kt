@@ -475,7 +475,11 @@ class EggIncubatorBlockEntity(pos: BlockPos, state: BlockState) :
         val level = level ?: return
         if (level.isClientSide) return
 
-        val resolved = CobbreedingCompat.extractProperties(items[SLOT_INPUT])?.asString(" ") ?: ""
+        val props = CobbreedingCompat.extractProperties(items[SLOT_INPUT])
+        if (props != null) {
+            CobbreedingCompat.resolveGender(props)
+        }
+        val resolved = props?.asString(" ") ?: ""
         if (resolved != syncedEggProperties) {
             syncedEggProperties = resolved
             level.sendBlockUpdated(worldPosition, blockState, blockState, 2)

@@ -5,8 +5,10 @@ import com.nbp.cobblemon_incubator.registry.ModRegistries
 import com.nbp.cobblemon_incubator.storage.EggPouchSavedData
 import com.nbp.cobblemon_incubator.util.CobbreedingCompat
 import com.nbp.cobblemon_incubator.util.EggPouchSearchFilter
+import net.minecraft.core.component.DataComponents
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.item.component.CustomData
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.Container
@@ -163,9 +165,46 @@ class EggPouchMenu : AbstractContainerMenu {
         val startIndex = scrollRow * SLOTS_PER_ROW
         for (i in 0 until POUCH_SLOTS) {
             val eggIndex = startIndex + i
-            val item = if (eggIndex in filteredEggs.indices) filteredEggs[eggIndex].copy() else ItemStack.EMPTY
+            val item = if (eggIndex in filteredEggs.indices) {
+                prepareEggForClient(filteredEggs[eggIndex])
+            } else {
+                ItemStack.EMPTY
+            }
             visibleContainer.setItem(i, item)
         }
+    }
+
+    private fun prepareEggForClient(rawEgg: ItemStack): ItemStack {
+        val item = rawEgg.copy()
+        val props = CobbreedingCompat.extractProperties(item)
+        if (props != null) {
+            val timer = CobbreedingCompat.getTimer(item)
+            val gender = CobbreedingCompat.resolveGenderName(props)
+            CustomData.update(DataComponents.CUSTOM_DATA, item) { tag ->
+                tag.putString("PouchEggProps", props.asString(" "))
+                if (timer != null) tag.putInt("PouchEggTimer", timer)
+                if (gender != null) tag.putString("PouchEggGender", gender)
+            }
+        }
+        return item
+    }
+
+    private fun cleanEgg(stack: ItemStack): ItemStack {
+        if (stack.isEmpty) return ItemStack.EMPTY
+        val copy = stack.copy()
+        val customData = copy.get(DataComponents.CUSTOM_DATA) ?: return copy
+        val tag = customData.copyTag()
+        if (tag.contains("PouchEggProps") || tag.contains("PouchEggTimer") || tag.contains("PouchEggGender")) {
+            tag.remove("PouchEggProps")
+            tag.remove("PouchEggTimer")
+            tag.remove("PouchEggGender")
+            if (tag.isEmpty) {
+                copy.remove(DataComponents.CUSTOM_DATA)
+            } else {
+                copy.set(DataComponents.CUSTOM_DATA, CustomData.of(tag))
+            }
+        }
+        return copy
     }
 
     private fun updateHeldPouchCount(player: ServerPlayer, count: Int) {
@@ -199,7 +238,11 @@ class EggPouchMenu : AbstractContainerMenu {
                 if (carried.isEmpty && !oldItem.isEmpty) {
                     // Pick up egg from pouch to cursor
                     super.clicked(slotId, button, clickType, player)
-                    serverData.removeEgg(pouchUuid, oldItem)
+                    val clean = cleanEgg(oldItem)
+                    serverData.removeEgg(pouchUuid, clean)
+                    if (!player.containerMenu.carried.isEmpty) {
+                        player.containerMenu.carried = cleanEgg(player.containerMenu.carried)
+                    }
                     updateHeldPouchCount(player, serverData.getEggCount(pouchUuid))
                     refreshVisibleSlots()
                     return
@@ -208,7 +251,7 @@ class EggPouchMenu : AbstractContainerMenu {
                     if (CobbreedingCompat.isEgg(carried) && carried.item !is EggPouchItem) {
                         super.clicked(slotId, button, clickType, player)
                         val placed = visibleContainer.getItem(slotId)
-                        serverData.addEgg(pouchUuid, placed.copy())
+                        serverData.addEgg(pouchUuid, cleanEgg(placed))
                         updateHeldPouchCount(player, serverData.getEggCount(pouchUuid))
                         refreshVisibleSlots()
                     }
@@ -218,8 +261,12 @@ class EggPouchMenu : AbstractContainerMenu {
                     if (CobbreedingCompat.isEgg(carried) && carried.item !is EggPouchItem) {
                         super.clicked(slotId, button, clickType, player)
                         val placed = visibleContainer.getItem(slotId)
-                        serverData.removeEgg(pouchUuid, oldItem)
-                        serverData.addEgg(pouchUuid, placed.copy())
+                        val cleanOld = cleanEgg(oldItem)
+                        serverData.removeEgg(pouchUuid, cleanOld)
+                        serverData.addEgg(pouchUuid, cleanEgg(placed))
+                        if (!player.containerMenu.carried.isEmpty) {
+                            player.containerMenu.carried = cleanEgg(player.containerMenu.carried)
+                        }
                         updateHeldPouchCount(player, serverData.getEggCount(pouchUuid))
                         refreshVisibleSlots()
                     }
@@ -228,7 +275,8 @@ class EggPouchMenu : AbstractContainerMenu {
             } else if (clickType == ClickType.THROW) {
                 if (!oldItem.isEmpty) {
                     super.clicked(slotId, button, clickType, player)
-                    serverData.removeEgg(pouchUuid, oldItem)
+                    val clean = cleanEgg(oldItem)
+                    serverData.removeEgg(pouchUuid, clean)
                     updateHeldPouchCount(player, serverData.getEggCount(pouchUuid))
                     refreshVisibleSlots()
                     return
@@ -247,21 +295,18 @@ class EggPouchMenu : AbstractContainerMenu {
 
         if (index in 0 until POUCH_SLOTS) {
             // Transfer egg from pouch to player inventory
-            if (!moveItemStackTo(stack, POUCH_SLOTS, slots.size, true)) {
+            val clean = cleanEgg(copy)
+            if (!moveItemStackTo(clean, POUCH_SLOTS, slots.size, true)) {
                 return ItemStack.EMPTY
             }
-            if (stack.isEmpty) {
-                slot.setByPlayer(ItemStack.EMPTY)
-            } else {
-                slot.setChanged()
-            }
+            slot.setByPlayer(ItemStack.EMPTY)
             if (player is ServerPlayer) {
                 val serverData = EggPouchSavedData.get(player.server)
-                serverData.removeEgg(pouchUuid, copy)
+                serverData.removeEgg(pouchUuid, clean)
                 updateHeldPouchCount(player, serverData.getEggCount(pouchUuid))
                 refreshVisibleSlots()
             }
-            return copy
+            return clean
         } else {
             // Transfer egg from player inventory to pouch
             if (!CobbreedingCompat.isEgg(stack) || stack.item is EggPouchItem) {
@@ -271,13 +316,14 @@ class EggPouchMenu : AbstractContainerMenu {
             slot.setByPlayer(ItemStack.EMPTY)
             if (player is ServerPlayer) {
                 val serverData = EggPouchSavedData.get(player.server)
-                if (copy.count > 1) {
-                    for (i in 0 until copy.count) {
-                        val single = copy.copy().apply { count = 1 }
+                val clean = cleanEgg(copy)
+                if (clean.count > 1) {
+                    for (i in 0 until clean.count) {
+                        val single = clean.copy().apply { count = 1 }
                         serverData.addEgg(pouchUuid, single)
                     }
                 } else {
-                    serverData.addEgg(pouchUuid, copy)
+                    serverData.addEgg(pouchUuid, clean)
                 }
                 updateHeldPouchCount(player, serverData.getEggCount(pouchUuid))
                 refreshVisibleSlots()
@@ -295,7 +341,7 @@ class EggPouchMenu : AbstractContainerMenu {
                 val slot = slots[slotIndex]
                 val stack = slot.item
                 if (!stack.isEmpty && CobbreedingCompat.isEgg(stack) && stack.item !is EggPouchItem) {
-                    serverData.addEgg(pouchUuid, stack.copy())
+                    serverData.addEgg(pouchUuid, cleanEgg(stack))
                     slot.setByPlayer(ItemStack.EMPTY)
                     deposited++
                 }

@@ -4,8 +4,10 @@ import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
 import net.minecraft.nbt.Tag
+import net.minecraft.core.component.DataComponents
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.component.CustomData
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 
@@ -19,7 +21,7 @@ class EggPouchSavedData : SavedData() {
     fun addEgg(uuid: UUID, egg: ItemStack) {
         if (egg.isEmpty) return
         val list = getEggs(uuid)
-        list.add(egg)
+        list.add(cleanForComparison(egg))
         setDirty()
     }
 
@@ -33,16 +35,35 @@ class EggPouchSavedData : SavedData() {
 
     fun removeEgg(uuid: UUID, egg: ItemStack): Boolean {
         val list = getEggs(uuid)
+        val cleanTarget = cleanForComparison(egg)
         val iterator = list.iterator()
         while (iterator.hasNext()) {
             val item = iterator.next()
-            if (ItemStack.matches(item, egg)) {
+            if (ItemStack.matches(cleanForComparison(item), cleanTarget)) {
                 iterator.remove()
                 setDirty()
                 return true
             }
         }
         return false
+    }
+
+    fun cleanForComparison(stack: ItemStack): ItemStack {
+        if (stack.isEmpty) return ItemStack.EMPTY
+        val copy = stack.copy()
+        val customData = copy.get(DataComponents.CUSTOM_DATA) ?: return copy
+        val tag = customData.copyTag()
+        if (tag.contains("PouchEggProps") || tag.contains("PouchEggTimer") || tag.contains("PouchEggGender")) {
+            tag.remove("PouchEggProps")
+            tag.remove("PouchEggTimer")
+            tag.remove("PouchEggGender")
+            if (tag.isEmpty) {
+                copy.remove(DataComponents.CUSTOM_DATA)
+            } else {
+                copy.set(DataComponents.CUSTOM_DATA, CustomData.of(tag))
+            }
+        }
+        return copy
     }
 
     fun getEggCount(uuid: UUID): Int {
@@ -57,7 +78,7 @@ class EggPouchSavedData : SavedData() {
             val itemsTag = ListTag()
             for (stack in items) {
                 if (!stack.isEmpty) {
-                    val saved = stack.saveOptional(registries)
+                    val saved = cleanForComparison(stack).saveOptional(registries)
                     itemsTag.add(saved)
                 }
             }

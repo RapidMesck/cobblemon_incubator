@@ -110,5 +110,16 @@
   "gui.cobblemon_incubator.pouch.deposit": "Guardar",
   "gui.cobblemon_incubator.pouch.deposit.tooltip": "Guardar todos os ovos do inventário",
   "gui.cobblemon_incubator.pouch.types": "Tipos",
-  "gui.cobblemon_incubator.pouch.timer": "Tempo para chocar: %s passos"
+  "gui.cobblemon_incubator.pouch.timer": "Tempo para chocar: %s passos",
+  "gui.cobblemon_incubator.pouch.guide.title": "Guia de Busca Avançada",
+  "gui.cobblemon_incubator.pouch.guide.subtitle": "Combine múltiplos filtros com espaço:",
+  "gui.cobblemon_incubator.pouch.guide.species": "• Espécie: nome do Pokémon (ex: pikachu, eevee)",
+  "gui.cobblemon_incubator.pouch.guide.type": "• Tipo (t:): t:fogo, t:agua, t:dragao, t:fairy",
+  "gui.cobblemon_incubator.pouch.guide.ability": "• Habilidade (a:): a:blaze, a:intimidate",
+  "gui.cobblemon_incubator.pouch.guide.nature": "• Natureza (n:): n:jolly, n:adamant, n:modest",
+  "gui.cobblemon_incubator.pouch.guide.gender": "• Gênero (g:): g:male, g:female, g:genderless",
+  "gui.cobblemon_incubator.pouch.guide.ivs_min": "• IVs Perfeitos: 5iv, 6iv ou iv>=5",
+  "gui.cobblemon_incubator.pouch.guide.ivs_stat": "• IV Específico: iv:spe=31, iv:atk<=0, iv:hp>=30",
+  "gui.cobblemon_incubator.pouch.guide.shiny": "• Shiny: shiny ou !shiny",
+  "gui.cobblemon_incubator.pouch.guide.example": "Exemplo: charmander t:fogo 5iv shiny"
 }
