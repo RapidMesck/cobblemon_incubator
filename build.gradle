@@ -1,9 +1,25 @@
+buildscript {
+    repositories {
+        maven { url = file("$rootDir/gradle/local-maven") }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath "architectury-plugin:architectury-plugin.gradle.plugin:3.5.0-local@jar"
+        classpath "dev.architectury:architectury-loom:1.17.1-local"
+        classpath "dev.architectury:architectury-transformer:5.2.92"
+        classpath "dev.architectury:mercury:0.4.3.18"
+        classpath "dev.architectury:refmap-remapper:1.0.5"
+        classpath "dev.architectury:at:1.0.1"
+    }
+}
+
 plugins {
-    id "dev.architectury.loom" version "1.10-SNAPSHOT" apply false
-    id "architectury-plugin" version "3.4-SNAPSHOT"
     id "com.gradleup.shadow" version "8.3.6" apply false
     id "org.jetbrains.kotlin.jvm" version "2.1.21" apply false
 }
+
+apply plugin: 'architectury-plugin'
 
 architectury {
     minecraft = project.minecraft_version
